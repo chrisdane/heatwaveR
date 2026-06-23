@@ -325,11 +325,9 @@ ts_to_posixlt <- as.POSIXlt(ts_to)
 # check heatwaveR settings
 if (!any(names(heatwaveR_opts) == "minDuration")) stop("set `heatwaveR_opts$minDuration`")
 if (!any(names(heatwaveR_opts) == "pctile")) stop("set `heatwaveR_opts$pctile`")
-if (heatwaveR_opts$pctile == 90) { # mhw -> extremes above high percentile
-    heatwaveR_opts$pctile <- 90        # for heatwaveR::ts2clm(); default: 90
+if (heatwaveR_opts$pctile == 90) { # mhw -> extremes above high percentil; for heatwaveR::ts2clm(); default: 90
     heatwaveR_opts$coldSpells <- F     # for heatwaveR::detect_event(); default: F
 } else if (heatwaveR_opts$pctile == 10) { # mcs -> extremes below low percentile
-    heatwaveR_opts$pctile <- 10
     heatwaveR_opts$coldSpells <- T
     if (any(varname == c("sst", "tos", "thetao"))) { # add seawater temperature names here
         heatwaveR_opts$MCScorrect <- T
