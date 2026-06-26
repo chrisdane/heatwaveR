@@ -1,96 +1,112 @@
 # r
 
 # find union of multi-variable extreme events in time (= compound events)
-# based on identified extreme events by calc_heatwaveR.r
+# based on results of calc_heatwaveR.r
+# 1) load global calc data to check if global spatial info agrees for all variables
+# 2) apply potential location_inds subset
+# 3) identify compound events
 
 rm(list=ls())
 if (!interactive()) {
     library(ncdf4)
-    source("~/scripts/r/functions/myfunctions.r") # identical_list
+    source("/home/a/a270073/scripts/r/functions/myfunctions.r") # identical_list
 }
 library(data.table) # quicker adding to df of unknown length (number of compound events to be deteced is unknown)?
 library(tibble) # to mimic heatwaveR::detect_event()
 
-workpath <- "/work/ba1103/a270073"
-pathout <- paste0(workpath, "/post/heatwaveR")
 verbose <- F
 #options(warn=2)
 
-if (T) { # mhw + odx compounds; ce_tos_bgc22
-    varnames <- c("tos", "bgc22")
+if (T) { # mhw + lox compounds; ce_tos_bgc22
     if (T) { # awi-esm-1-1-lr_kh800
+        varnames <- c("tos", "bgc22")
         if (T) { # historical3_and_ssp585_2
             dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
-            outpath <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname)
-            if (T) { # surface; fixed baseline with trend
+            if (F) { # surface; fixed baseline with trend
                 depths <- c(NA, "0m")
                 nchunks <- c(82, 82)
-                files <- list(list.files(path=paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
+                files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_0m_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")),
+                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
                                         "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_withTrend")
-                nchunks_out <- max(nchunks) # better use more chunks = smaller files
             } else if (F) { # surface; fixed baseline wout trend
                 depths <- c(NA, "0m")
                 nchunks <- c(82, 82)
-                files <- list(list.files(path=paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
+                files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_0m_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")),
+                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
                                         "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_woutTrend")
-                nchunks_out <- max(nchunks) # better use more chunks = smaller files
             } else if (F) { # surface; 31-yr running mean
                 depths <- c(NA, "0m")
                 nchunks <- c(160, 160)
-                files <- list(list.files(path=paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
+                files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_31a_withTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_0m_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_31a_withTrend*.RData")),
+                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_31a_withTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
                                         "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_31a_withTrend")
-                nchunks_out <- max(nchunks) # better use more chunks = smaller files
             } else if (F) { # surface; 15-yr running mean
                 depths <- c(NA, "0m")
                 nchunks <- c(160, 160)
-                files <- list(list.files(path=paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
+                files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_0m_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")),
+                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
                                         "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_15a_withTrend")
-                nchunks_out <- max(nchunks) # better use more chunks = smaller files
+            } else if (T) { # test different chunks per variable
+                depths <- c(NA, "0m")
+                nchunks <- c(82, 160)
+                files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")),
+                                         full.names=T),
+                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")),
+                                         full.names=T))
+                setting_label <- paste0(dataname, "_calc_ce",
+                                        "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
+                                        "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
+                                        "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_tos_fixed_bgc22_runmean_15a_withTrend")
             } # which heatwaveR setting
         } # which period/experiments
     } # which data
 } # which variables for compound
 
-if (T) { # will be replaced by compound_heatwaveR_loop.r
-    files <- lapply(files, "[", 28)
+#nchunks_out <- max(nchunks) # old; better use more chunks = smaller files
+#pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160") # same nchunks as njobs_wanted in compound_heatwaveR_loop
+pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160")
+
+if (F) { # old: does not take into account different nchunks per variable
+    files <- lapply(files, "[", 28) # will be replaced by compound_heatwaveR_loop.r
+}
+if (T) { # new: apply location_inds later to take different chunks per variable into account
+    location_inds <- 7:20 # will be replaced by compound_heatwaveR_loop.r
 }
 
 # runtime
-# 119 years, 2 variables, 79[2-3] locations, ~7 min per file
-# 119 years, 2 variables, 79[2-3] locations, ~9 min per file
-# 119 years, 2 variables, 154[7-8] locations, ~10 min per file
+# fesom, 119 years, 2 variables, 40 jobs: 309[4-5] locations (=2 files of nchunks=82, 154[7-8]): 20 to 75 min = 0.33 to 1.25 h
+# fesom, 119 years, 2 variables, 40 jobs: 317[1-2] locations (=4 files of nchunks=160, 79[2-3]): 32 to 51 min = 0.53 to 0.85 h (only n=2)
+# fesom, 119 years, 2 variables, 40 jobs: 4642 locations (=3 files of nchunks=82, 154[7-8]): 24 to 148 min = 0.4 to 2.46 h
 
 ##########################################################################################
 
@@ -99,12 +115,20 @@ names(files) <- varnames
 if (any(sapply(files, function(x) all(is.na(x))))) stop("provided zero files for some variable")
 nfiles <- sapply(files, length)
 if (any(nfiles == 0)) stop("provided zero files for some variable")
-if (!any(nchunks_out == nchunks)) stop("`nchunks_out` must be one of `nchunks` = ", paste(nchunks, collapse=", "))
-outpath <- paste0(outpath, "/nchunks_", nchunks_out)
-dir.create(outpath, recursive=T, showWarnings=F)
-if (!dir.exists(outpath)) stop("could not create outpath ", outpath)
+if (!exists("pathout")) stop("provide `pathout`")
+dir.create(pathout, recursive=T, showWarnings=F)
+if (!dir.exists(pathout)) stop("could not create pathout ", pathout)
+if (exists("location_inds")) {
+    if (!is.null(location_inds)) {
+        if (!is.vector(location_inds)) stop("non-NULL `location_inds` must be vector")
+        if (!all(is.finite(location_inds))) stop("non-NULL `location_inds` must all be finite")
+        if (any(location_inds < 1)) stop("non-NULL `location_inds` must all be larger or equal 1")
+    }
+} else {
+    location_inds <- NULL
+}
 
-# get location chunks if calc_heatwaveR.r ran with `locations_inds`
+# get location chunks if calc_heatwaveR.r ran with `location_inds`
 files2 <- NULL
 for (vi in seq_along(files)) {
     files2[[vi]] <- data.frame(file=files[[vi]])
@@ -150,20 +174,21 @@ for (vi in seq_along(files)) {
 files <- files2
 rm(locs, files2)
 
-# check if nchunks_out makes sense
-nchunks_in <- sapply(files, nrow) # might differ to `nchunks` (of calc result) due to running this compound job in chunks as well
-nchunks_out_loop <- nchunks_out
-if (!any(nchunks_out_loop == nchunks_in)) { # e.g. wanted nchunks_out 82 does not fit to loaded nchunks_in 10
-    message("input nchunks (nfiles) of ", length(varnames), " variables are (", paste(nchunks_in, collapse=", "),
-            ") and wanted `nchunks_out_loop` = `nchunks_out` = ", nchunks_out_loop)
-    if (length(unique(nchunks_in)) != 1) {
-        stop("in this case input chunks of all variables must be equal. the case that they differ across variables is not yet implemented")
+if (F) { # old; check if nchunks_out makes sense
+    nchunks_in <- sapply(files, nrow) # might differ to `nchunks` (of calc result) due to running this compound job in chunks as well
+    nchunks_out_loop <- nchunks_out
+    if (!any(nchunks_out_loop == nchunks_in)) { # e.g. wanted nchunks_out 82 does not fit to loaded nchunks_in 10
+        message("input nchunks (nfiles) of ", length(varnames), " variables are (", paste(nchunks_in, collapse=", "),
+                ") and wanted `nchunks_out_loop` = `nchunks_out` = ", nchunks_out_loop)
+        if (length(unique(nchunks_in)) != 1) {
+            stop("in this case input chunks of all variables must be equal. the case that they differ across variables is not yet implemented")
+        }
+        nchunks_out_loop <- nchunks_in[1] # e.g. 10 if this compound job was run with 10 chunks (files) of calc result
+        message("--> update `nchunks_out_loop` to ", nchunks_out_loop)
     }
-    nchunks_out_loop <- nchunks_in[1] # e.g. 10 if this compound job was run with 10 chunks (files) of calc result
-    message("--> update `nchunks_out_loop` to ", nchunks_out_loop)
+    chunks_out_varind <- which(nchunks_in == nchunks_out_loop)[1]
+    if (is.na(chunks_out_varind) || length(chunks_out_varind) == 0) stop("this should not happen")
 }
-chunks_out_varind <- which(nchunks_in == nchunks_out_loop)[1]
-if (is.na(chunks_out_varind) || length(chunks_out_varind) == 0) stop("this should not happen")
 
 # load data
 events_all_var <- vector("list", length=length(files)) # outputs of `calc_heatwaveR.r`
@@ -180,7 +205,7 @@ for (vi in seq_along(varnames)) {
     options(width=width) # restore old value
     events_all <- opts_all <- opts_global_all <- lms_all <- vector("list", length=nfiles[vi]) # outputs of `calc_heatwaveR.r`
     tic <- Sys.time()
-    message("\nload ", nfiles[vi], " ", varnames[vi], " heatwaveR calc results files ...")
+    message("\nload ", nfiles[vi], " ", varnames[vi], " calc_heatwaveR result .RData files ...")
     for (fi in seq_len(nfiles[vi])) {
         message("load ", varnames[vi], " file ", fi, "/", nfiles[vi], " (", file_sizes_pretty[fi], "): ", files[[vi]]$file[fi], " ...")
         datnames <- base::load(files[[vi]]$file[fi]) # "events", "opts", "opts_global"; if calc_trend or remove_trend: "lms"
@@ -239,7 +264,7 @@ for (vi in seq_along(varnames)) {
                 clim_from[[vi]] <- ts_from[[vi]]
                 clim_to[[vi]] <- ts_to[[vi]]
             } else { # fixed baseline
-                stop("foooo")
+                stop("not yet")
             }
         } else if (!is.null(opts_global[[vi]]$heatwaveR_opts$climatologyPeriod_posix)) { # old
             clim_from[[vi]] <- opts_global[[vi]]$heatwaveR_opts$climatologyPeriod_posix[1]
@@ -267,24 +292,27 @@ for (vi in seq_along(varnames)) {
     spatialdim_opts[[vi]]$nspatialdims <- length(opts_global[[vi]]$spatial_dims)
     spatialdim_opts[[vi]]$spatialdimnames <- names(opts_global[[vi]]$spatial_dims)
     spatialdim_opts[[vi]]$spatialdims <- sapply(opts_global[[vi]]$spatial_dims, "[[", "len")
+    spatialdim_opts[[vi]]$ntot <- prod(spatialdim_opts[[vi]]$spatialdims)
+}
+cat(capture.output(str(spatialdim_opts)), sep="\n")
+for (vi in seq_along(varnames)) {
     if (spatialdim_opts[[vi]]$nspatialdims > 2) {
         stop(spatialdim_opts[[vi]]$nspatialdims, "D spatial dims case not defined (variable ", vi, ")")
     }
 }
-cat(capture.output(str(spatialdim_opts)), sep="\n")
 if (!identical_list(spatialdim_opts)) {
     # special case 1: fesom spatial dim names "nodes_2d" and "ncells" represent the same thing --> ok
     if (all(sapply(spatialdim_opts, "[[", "nspatialdims") == 1) && # all have one spatial dim
         length(unique(sapply(spatialdim_opts, "[[", "spatialdims"))) == 1 && # all of same length
         !any(is.na(match(c("nodes_2d", "ncells"), sapply(spatialdim_opts, "[[", "spatialdimnames"))))) { # all spatial dims called "nodes_2d" or "ncells"
     } else {
-        stop("not all loaded data from all variables have same spatial infos")
+        stop("not all variables have same spatial infos")
     }
 }
-message("--> ok; look all the same")
+message("--> all look the same --> ok")
 
 # reorder so that every entry is one location
-# --> this is helpful here to bring possibly differently chunked (`nchunks`) variables onto same spatial dims
+# --> bring possibly differently chunked (`nchunks`) variables onto same spatial dims
 for (vi in seq_along(varnames)) {
     if (!is.null(files[[vi]]$loc_from)) {
         message("\nreorder objects from ", nfiles[vi], " ", varnames[vi], " files so that every entry is one location ...")
@@ -293,8 +321,8 @@ for (vi in seq_along(varnames)) {
         cnt <- 0
         tic <- Sys.time()
         for (fi in seq_len(nfiles[vi])) {
-            msg <- paste0("var ", varnames[vi], " file ", fi, "/", nfiles[vi], ": `events_all[[", vi, "]]` (",
-                          utils:::format.object_size(object.size(events_all[[vi]][[fi]]), units="auto"), "), `opts_all[[", vi, "]]` (",
+            msg <- paste0("vi ", vi, "/", length(varnames), " var ", varnames[vi], " file ", fi, "/", nfiles[vi], ": `events_all[[vi=", vi, "]]` (",
+                          utils:::format.object_size(object.size(events_all[[vi]][[fi]]), units="auto"), "), `opts_all[[vi=", vi, "]]` (",
                           utils:::format.object_size(object.size(opts_all[[vi]][[fi]]), units="auto"), ")")
             if (exists("lms_all")) {
                 msg <- paste0(msg, ", `lms` (", utils:::format.object_size(object.size(lms_all[[vi]][[fi]]), units="auto"), ")")
@@ -323,24 +351,57 @@ for (vi in seq_along(varnames)) {
         stop("implement")
     }
 } # for vi
+# events_all[[1]][[1]] --> var/loc: (nevents x 28)
 
 # get number of locations per variable
+# --> should be ntot for all vars since all data was loaded
 nlocs <- sapply(events_all, length)
 nloc <- unique(nlocs)
 if (length(nloc) != 1) {
     stop("`nlocs` = ", paste(nlocs, collapse=", "),
-         ", i.e. the number of locations differ between variables --> this should not happen and have been checked earlier")
+         ", i.e. the number of locations differ between variables --> maybe you've loaded data from different depths/locations?")
 }
-# events_all[[1]][[1]] --> var/loc: (nevents x 28)
+ntot <- nloc
+for (vi in seq_along(varnames)) {
+    if (spatialdim_opts[[vi]]$ntot != ntot) {
+        stop("`spatialdim_opts[[vi]]$ntot` = ", spatialdim_opts[[vi]]$ntot, " != ntot = ", ntot, ". this should not happen")
+    }
+}
+
+message("\ncheck for location subset ...")
+if (!is.null(location_inds)) { # new location subset
+    message("--> `location_inds` = ", min(location_inds), ":", max(location_inds),
+            "\n--> subset ", length(location_inds), " locations ...")
+    for (vi in seq_along(varnames)) {
+        events_all[[vi]] <- events_all[[vi]][location_inds]
+        opts_all[[vi]] <- opts_all[[vi]][location_inds]
+        if (exists("lms")) lms_all[[vi]] <- lms[[vi]][location_inds]
+    }
+    nloc <- length(location_inds) # update
+} else { # `location_inds` not given --> use all locations
+    nloc <- ntot
+    message("--> `location_inds` is NULL --> use all ", nloc, " locations ...")
+    location_inds <- seq_len(nloc) # all: 1,...,n
+} # if !is.null(location_inds)
+
+# construct fout
+fout <- paste0(setting_label, "_locinds_",
+               sprintf(paste0("%0", nchar(ntot), "i"), location_inds[1]), "-",
+               sprintf(paste0("%0", nchar(ntot), "i"), location_inds[nloc]),
+               "_nloc_", nloc,
+               ".RData")
+fout <- paste0(pathout, "/", fout)
+message("\nsave results to fout = ", fout)
+if (file.exists(fout)) stop("this file already exists")
 
 # find compound events at every location
 message("\nfind compound events of ", length(varnames), " variables ",
         paste(varnames, collapse=", "), " at ", nloc, " locations ...")
-nevents_loci <- rep(NA, t=length(varnames))
+nevents_loci <- rep(NA, times=length(varnames))
 events_ce <- vector("list", length=nloc)
 tic <- Sys.time()
 for (loci in seq_len(nloc)) {
-#for (loci in 100) {
+#for (loci in 100) { # test
 
     if (loci == 1 || loci == nloc || loci %% 1e2 == 0) {
         message("loci ", loci, "/", nloc, " = ", round(loci/nloc*100), "%")
@@ -366,7 +427,7 @@ for (loci in seq_len(nloc)) {
     if (any(nevents_loci) == 0) { # for some variable zero events were found at that location --> skip to next location
 
         # mimic heatwaveR::detect_event()
-        events_ce[[loci]] <- tibble::as_tiabble(data.frame(date_start=NA, date_end=NA, duration=NA))
+        events_ce[[loci]] <- tibble::as_tibble(data.frame(date_start=NA, date_end=NA, duration=NA))
         # --> looks like:
         # $ : tibble [0 × 3] (S3: tbl_df/tbl/data.frame)
         #  ..- attr(*, ".internal.selfref")=<externalptr>
@@ -397,7 +458,7 @@ for (loci in seq_len(nloc)) {
                     date_end_eventj <- events_all[[other_varinds[vj]]][[loci]]$date_end[eventj]
                     if (any(!is.na(match(c(date_start_eventj, date_end_eventj), days[[varind]][[1]])))) {
                         # eventj of variable vj has _any_ overlap with eventi of variable varind
-                        # --> for CEs, there is usually no minimum day constraint as for individual extreme events (e.g. 5 days for MHWs, ODXs, ...)
+                        # --> for CEs, there is usually no minimum day constraint as for individual extreme events (e.g. 5 days for MHWs, LOXs, ...)
                         cnt <- cnt + 1
                         tmp[[cnt]] <- base::seq.Date(date_start_eventj, date_end_eventj, by="1 day")
                     } # if eventj has any days within eventi
@@ -495,33 +556,42 @@ message("--> took ", round(elapsed_sec), " sec ~ ", round(elapsed_sec/60, 1), " 
 
 #nevents_ce <- sapply(events_ce, nrow)
 
-# output chunk-wise to mimic result of calc_heatwaveR_loop.r
-message("\nsave results ...")
-loc_inds_abs <- loc_inds_chunk <- vector("list", length=nchunks_out_loop)
-for (chunki in seq_len(nchunks_out_loop)) {
+if (F) { # old
+         # output chunk-wise to mimic result of calc_heatwaveR_loop.r that can be used by post_heatwaveR
+    message("\nsave ce results ...")
+    loc_inds_abs <- loc_inds_chunk <- vector("list", length=nchunks_out_loop)
+    for (chunki in seq_len(nchunks_out_loop)) {
 
-    loc_inds_abs[[chunki]] <- seq(files[[chunks_out_varind]]$loc_from[chunki], files[[chunks_out_varind]]$loc_to[chunki], by=1)
-    if (chunki == 1) {
-        loc_inds_chunk[[chunki]] <- seq(1, length(loc_inds_abs[[chunki]]), by=1)
-    } else {
-        loc_inds_chunk[[chunki]] <- seq(range(loc_inds_chunk[[chunki-1]])[2]+1, by=1, length.out=length(loc_inds_abs[[chunki]]))
-    }
-    fout <- paste0(setting_label, "_locinds_",
-                   files[[chunks_out_varind]]$loc_from_char[chunki], "-", files[[chunks_out_varind]]$loc_to_char[chunki],
-                   "_nloc_", length(loc_inds_abs[[chunki]]), ".RData")
-    fout <- paste0(outpath, "/", fout)
-    message("save chunk ", chunki, "/", nchunks_out_loop, " ces from locs ",
-            paste(range(loc_inds_chunk[[chunki]]), collapse=" to "), " (n=",
-            length(loc_inds_chunk[[chunki]]), "):\n", fout, " ...")
-    if (file.exists(fout)) {
-        message("--> file already exists. skip")
-    } else {
-        events <- events_ce[loc_inds_chunk[[chunki]]] # cannot `base::save(x[inds])` directly o_O
-        opts <- opts_all[[1]][loc_inds_chunk[[chunki]]]
-        base::save(events, opts, opts_global, file=fout) # must be same names as in calc_heatwaveR.r
-    }
+        loc_inds_abs[[chunki]] <- seq(files[[chunks_out_varind]]$loc_from[chunki], files[[chunks_out_varind]]$loc_to[chunki], by=1)
+        if (chunki == 1) {
+            loc_inds_chunk[[chunki]] <- seq(1, length(loc_inds_abs[[chunki]]), by=1)
+        } else {
+            loc_inds_chunk[[chunki]] <- seq(range(loc_inds_chunk[[chunki-1]])[2]+1, by=1, length.out=length(loc_inds_abs[[chunki]]))
+        }
+        fout <- paste0(setting_label, "_locinds_",
+                       files[[chunks_out_varind]]$loc_from_char[chunki], "-", files[[chunks_out_varind]]$loc_to_char[chunki],
+                       "_nloc_", length(loc_inds_abs[[chunki]]), ".RData")
+        fout <- paste0(pathout, "/", fout)
+        message("save chunk ", chunki, "/", nchunks_out_loop, " ces from locs ",
+                paste(range(loc_inds_chunk[[chunki]]), collapse=" to "), " (n=",
+                length(loc_inds_chunk[[chunki]]), "):\n", fout, " ...")
+        if (file.exists(fout)) {
+            message("--> file already exists. skip")
+        } else {
+            events <- events_ce[loc_inds_chunk[[chunki]]] # cannot `base::save(x[inds])` directly o_O
+            opts <- opts_all[[1]][loc_inds_chunk[[chunki]]]
+            base::save(events, opts, opts_global, file=fout) # must be same names as in calc_heatwaveR.r
+        }
 
-} # for chunki
+    } # for chunki
+
+} else if (T) { # new
+    message("\nsave ce results from ", nloc, " locations to\n   ", fout, " ...")
+    events <- events_ce
+    opts <- opts_all[[1]] # same location opts for all vars; was already checked earlier
+    base::save(events, opts, opts_global, file=fout) # must be same names as in calc_heatwaveR.r
+
+} # old/new
 
 message("\nfinished\n")
 

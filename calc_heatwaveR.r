@@ -56,13 +56,13 @@ rm(list=ls()); graphics.off()
 op_warn <- options()$warn
 op_width <- options()$width
 library(ncdf4)
-library(heatwaveR)
+library(heatwaveR) # 0.4.6: https://cran.r-project.org/src/contrib/Archive/heatwaveR/heatwaveR_0.4.6.tar.gz
 
 # default heatwaveR package options
 heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); default: 5 days
-                       clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
+                       #clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
                        #clim_runmean=31,
-                       #clim_runmean=15,
+                       clim_runmean=15,
                        MCScorrect=F,     # for heatwaveR::detect_event(); default: F; passed to heatwaveR::category(): do not let seawater temp threshold go below -1.8°C
                        calc_trend=T,     # save trend of original data
                        remove_trend=F,   # remove trend of original data before extreme event detection
@@ -246,7 +246,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     files_to <- files_from
     files_from <- paste0(files_from, "-01-01") # per
     files_to <- paste0(files_to, "-12-31")     # file
-    #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_1")
+    #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_1") # same nchunks as njobs_wanted in calc_heatwaveR_loop
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_10")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_20")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_40")
@@ -436,7 +436,7 @@ for (fi in seq_along(files$file)) {
                  length(ncs[[fi]]$var), " available variables: \"",
                  paste(names(ncs[[fi]]$var), collapse="\", \""), "\".")
         }
-        varname_atts <- ncatt_get(ncs[[fi]], varname)
+        varname_atts <- ncdf4::ncatt_get(ncs[[fi]], varname)
         if (is.null(varname_atts$units)) {
             message("this variable has no attribute called \"units\"\n",
                     "--> use user provided `units` ...")
@@ -503,7 +503,7 @@ for (fi in seq_along(files$file)) {
     } # is msg is not null
 
     # get time of current file
-    timeunit <- ncs[[fi]]$dim[[timedimname]]$unit
+    timeunit <- ncs[[fi]]$dim[[timedimname]]$units
     if (grepl(" since ", timeunit)) {
         timeorigin <- substr(timeunit,
                              regexpr(" since ", timeunit) + 7,
@@ -647,16 +647,16 @@ if (nspatialdims == 1) { # e.g. irregular fesom
 names(mapping_df) <- spatialdimnames
 
 # find spatial locations if wanted
-message("\nselect locations for mhw calculation ...")
+message("\ncheck for location subset ...")
 if (!is.null(location_inds)) {
     nloc <- length(location_inds)
-    message("`location_inds` is not NULL --> continue with ", nloc, "/", ntot,
+    message("--> `location_inds` = ", min(location_inds), ":", max(location_inds), " --> continue with ", nloc, "/", ntot,
             " locations from ", location_inds[1], " to ", location_inds[nloc], " ...")
     mapping_df <- mapping_df[location_inds,,drop=F]
-} else { # `location_inds` not given --> use all values
+} else { # `location_inds` not given --> use all locations
     nloc <- ntot
-    message("`location_inds` is NULL --> use all ", nloc, " locations ...")
-    location_inds <- seq_len(nloc)
+    message("--> `location_inds` is NULL --> use all ", nloc, " locations ...")
+    location_inds <- seq_len(nloc) # all: 1,...,n
 }
 
 # construct fout
@@ -717,16 +717,20 @@ for (loci in seq_len(nloc)) {
     # time,lat,lon chunked 1,720,1440
     # ntime 366: 7.473 sec = 0.12 min
     # ntime 10958: 206 sec = 3.43 min, 274 sec = 4.56 min, 209 sec = 3.48 min, 225.814 sec = 3.76 min
+
     # lon,lat,time chunked 720,1440,1
     # ntime 366: 8.348 sec = 0.14 min, 8.109 sec = 0.14 min
     # ntime 10958: 247.93 sec = 4.13 min, 253.45 sec = 4.224 min
+
     # time,lat,lon chunked 366,720,1:
     # ntime: 8766: 0.352 sec = 0.006 min
     # ntime: 10958: 0.626 sec = 0.01 min, 0.527 sec = 0.009 min, 0.271 sec = 0.005 min, 0.735 sec = 0.012 min
     # mean over 4000 locations * 30 files = 0.195861 sec
+
     # time,lat,lon chunked 366,1,1440:
     # ntime: 10958: 0.441 sec = 0.007 min, 0.222 sec = 0.004 min, 0.436 sec = 0.007 min, 0.148 sec = 0.002 min
     # mean over 4000 locations * 30 files = 0.008778555 sec
+
     elapsed_all[loci] <- elapsed[3] # sec
     message(round(elapsed[3], 3), " sec = ", round(elapsed[3]/60, 3), " min")
     if (all(is.na(data))) {

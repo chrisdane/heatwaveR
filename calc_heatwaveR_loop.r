@@ -55,7 +55,7 @@ if (F) { # oisst
 
 if (!exists("replace_by")) {
     ntot <- end - start + 1
-    replace_by <- replicate(floor(seq(start, end, b=ntot/njobs_wanted)), n=2)
+    replace_by <- replicate(floor(seq(start, end, by=ntot/njobs_wanted)), n=2)
     replace_by[,2] <- c(replace_by[2:njobs_wanted,2]-1, end)
     df <- cbind(from=replace_by[,1], to=replace_by[,2], len=replace_by[,2]-replace_by[,1]+1) # check
     replace_by <- apply(replace_by, 1, paste, collapse=":")
