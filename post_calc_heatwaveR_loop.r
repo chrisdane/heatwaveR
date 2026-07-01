@@ -4,7 +4,7 @@ rm(list=ls()); graphics.off()
 
 submit_via_nohup <- F
 submit_via_sbatch <- T # uses account resources
-dry <- F # do not submit jobs
+dry <- T # do not submit jobs
 
 myrunscript_fname <- "~/scripts/r/heatwaveR/post_calc_heatwaveR.r"
 
@@ -118,16 +118,17 @@ start <- 1; end <- 160
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_31_duration"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_31_nevents"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_duration"
-prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_nevents"
+#prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_nevents"
+prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_intensity_duration_nevents"
 
-replace_string <- list(string="    files <- files[", between_lines=c(135, 137))
+replace_string <- list(string="    files <- files[", between_lines=c(136, 138))
 njobs_wanted <- end # = nchunks
 njobs_wanted <- 1 # njobs=1 for all files for `calc_timmean` and `calc_ts`
 
 if (!exists("replace_by")) {
     ntot <- end - start + 1
     if (njobs_wanted > 1) {
-        replace_by <- replicate(floor(seq(start, end, b=ntot/njobs_wanted)), n=2)
+        replace_by <- replicate(floor(seq(start, end, by=ntot/njobs_wanted)), n=2)
         replace_by[,2] <- c(replace_by[2:njobs_wanted,2]-1, end)
     } else {
         replace_by <- matrix(c(start, end), ncol=2)
@@ -152,15 +153,15 @@ if (file.access(logpath, 2) == -1) stop("no write permission to `logpath` = \"",
 
 njobs <- length(replace_by)
 if (njobs == 0 || !is.null(dim(replace_by))) {
-    stop("njobs = ", njobs, ". check your 'replace_by':", replace_by) 
+    stop("njobs = ", njobs, ". check your 'replace_by':", replace_by)
 }
 
 # find line to replace years between wanted lines
 replace_inds <- replace_string$between_lines[1]:replace_string$between_lines[2]
 replace_ind <- which(grepl(replace_string$string, myrunscript[replace_inds], fixed=T)) # fixed for special symbols e.g. [ ]
 if (length(replace_ind) != 1) {
-    stop("found ", length(replace_ind), " inds of `replace_string` = \"", replace_string$string, 
-         "\" between lines ", paste(replace_string$between_lines, collapse="-"), 
+    stop("found ", length(replace_ind), " inds of `replace_string` = \"", replace_string$string,
+         "\" between lines ", paste(replace_string$between_lines, collapse="-"),
          " in original runscript ", myrunscript_fname, ". need exactly 1 match")
 }
 
@@ -168,7 +169,7 @@ message("submit ", njobs, " jobs ...")
 for (jobi in seq_len(njobs)) {
 
     message("*** job ", jobi, "/", njobs, " ***")
-    
+
     # save temporary runscript as file
     #id <- format(as.numeric(Sys.time())*1000, digits=10) # some unique number for log file name
     suffix <- paste0(gsub("[[:punct:]]", "_", replace_by[jobi]), collapse="_")
@@ -178,20 +179,20 @@ for (jobi in seq_len(njobs)) {
     if (grepl("[[:punct:]]", substr(suffix, nchar(suffix), nchar(suffix)))) { # remove trailing special character
         suffix <- substr(suffix, 1, nchar(suffix)-1)
     }
-    myrunscripttmp_fname <- paste0(logpath, "/", myrunscript_basename, 
-                                   "_", prefix, 
-                                   "_job_", sprintf(paste0("%0", nchar(njobs), "i"), jobi), "_of_", njobs, 
+    myrunscripttmp_fname <- paste0(logpath, "/", myrunscript_basename,
+                                   "_", prefix,
+                                   "_job_", sprintf(paste0("%0", nchar(njobs), "i"), jobi), "_of_", njobs,
                                    "_", suffix, "_script.r")
     if (file.exists(myrunscripttmp_fname)) stop("myrunscripttmp_fname = ", myrunscripttmp_fname, " already exists")
-    
+
     # replace years
     myrunscripttmp <- myrunscript
     myrunscripttmp[replace_inds][replace_ind] <- trimws(paste0(replace_string$string, replace_by[jobi]))
-    message("replaced \"", 
-            myrunscript[replace_inds][replace_ind], "\" with \"", 
+    message("replaced \"",
+            myrunscript[replace_inds][replace_ind], "\" with \"",
             myrunscripttmp[replace_inds][replace_ind], "\"")
 
-    # write temporary runscript 
+    # write temporary runscript
     write(myrunscripttmp, myrunscripttmp_fname)
 
     # create jobs command
@@ -199,14 +200,14 @@ for (jobi in seq_len(njobs)) {
         logfile <- paste0(tools::file_path_sans_ext(myrunscripttmp_fname), ".log")
         cmd <- paste0("rnohup ", myrunscripttmp_fname, " ", logfile)
     } else if (submit_via_sbatch) {
-        slurmrunscript_fname <- paste0(logpath, "/", myrunscript_basename, 
-                                       "_", prefix, 
-                                       "_job_", sprintf(paste0("%0", nchar(njobs), "i"), jobi), "_of_", njobs, 
+        slurmrunscript_fname <- paste0(logpath, "/", myrunscript_basename,
+                                       "_", prefix,
+                                       "_job_", sprintf(paste0("%0", nchar(njobs), "i"), jobi), "_of_", njobs,
                                        "_", suffix, "_sbatch.run")
         if (file.exists(slurmrunscript_fname)) stop("slurm_runscriptfname = ", slurmrunscript_fname, " already exists")
 
         # mistral example scripts: https://www.dkrz.de/up/systems/mistral/running-jobs/example-batch-scripts
-        # mistral partition limits: https://www.dkrz.de/up/systems/mistral/running-jobs/partitions-and-limits 
+        # mistral partition limits: https://www.dkrz.de/up/systems/mistral/running-jobs/partitions-and-limits
         # ollie example scripts: https://swrepo1.awi.de/plugins/mediawiki/wiki/hpc/index.php/Slurm_Example_Scripts
         # ollie partition limits: https://swrepo1.awi.de/plugins/mediawiki/wiki/hpc/index.php/SLURM#Partitions
         cmd <- c("#!/bin/bash",
@@ -214,15 +215,15 @@ for (jobi in seq_len(njobs)) {
                  "#SBATCH --partition=shared     # Specify partition name",
                  #"#SBATCH --partition=prepost     # Specify partition name",
                  #"#SBATCH --ntasks=1             # Specify max. number of tasks to be invoked",
-                 "#SBATCH --time=04:00:00        # Set a limit on the total run time",
-                 #"#SBATCH --time=08:00:00        # Set a limit on the total run time",
+                 #"#SBATCH --time=04:00:00        # Set a limit on the total run time",
+                 "#SBATCH --time=08:00:00        # Set a limit on the total run time",
                  #"#SBATCH --time=12:00:00        # Set a limit on the total run time", # long for `calc_event_inds`
                  #"#SBATCH --time=24:00:00        # Set a limit on the total run time", # long for `calc_event_inds`
                  #"#SBATCH --mail-type=FAIL       # Notify user by email in case of job failure",
                  #"#SBATCH --account=ab0246       # Charge resources on this project account",
                  #"#SBATCH --account=ba0989       # Charge resources on this project account",
-                 #"#SBATCH --account=ab1095       # Charge resources on this project account",
-                 "#SBATCH --account=ba1103       # Charge resources on this project account",
+                 "#SBATCH --account=ab1095       # Charge resources on this project account",
+                 #"#SBATCH --account=ba1103       # Charge resources on this project account",
                  # memory:
                  #"#SBATCH --mem=0                    # 0 = use all mem",
                  #"#SBATCH --mem=20G                    # 0 = use all mem",
@@ -241,7 +242,7 @@ for (jobi in seq_len(njobs)) {
         write(cmd, slurmrunscript_fname)
         cmd <- paste0("sbatch ", slurmrunscript_fname)
     } # which job submission method
-   
+
     message("run `", cmd, "` ...")
 
     # submit job

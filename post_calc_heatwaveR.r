@@ -5,11 +5,10 @@
 rm(list=ls()); graphics.off()
 if (!interactive()) {
     library(ncdf4)
-    source("~/scripts/r/functions/myfunctions.r") # identical_list
+    source("/home/a/a270073/scripts/r/functions/myfunctions.r") # identical_list
 }
 
-workpath <- "/work/ba1103/a270073"
-#pathout <- paste0(workpath, "/post/heatwaveR")
+#pathout <- paste0("/work/ba1103/a270073/post/heatwaveR")
 pathout <- paste0("/work/ab1095/a270073/post/heatwaveR")
 subset_from <- subset_to <- NULL
 
@@ -19,7 +18,7 @@ if (F) { # sst
     if (T) { # oisst
         dataname <- "oisst_v2.1"
         nchunks <- 30
-        pathin <- paste0(workpath, "/post/heatwaveR/calc/sst/", dataname, "/nchunks_", nchunks)
+        pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/sst/", dataname, "/nchunks_", nchunks)
         #files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20141231_clim_19820101-20141231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
         #files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
         files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
@@ -31,34 +30,34 @@ if (F) { # sst
             dataname <- "awi-esm-1-1-lr_kh800_piControl"
             if (F) { # test
                 nchunks <- 1
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_piControl_calc_mhw_tos_ts_29970101-30001231_clim_29970101-30001231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
             } else if (T) { # complete piControl
                 nchunks <- 82
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_piControl_calc_mhw_tos_ts_26860101-30001231_clim_26860101-30001231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
             }
         } else if (F) { # historical2
             dataname <- "awi-esm-1-1-lr_kh800_historical2"
             if (F) { # clim 1850-2014
                 nchunks <- 40
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical2_calc_mhw_tos_ts_18500101-20141231_clim_18500101-20141231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
             } else if (T) { # clim 1982-2014
                 nchunks <- 10
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical2_calc_mhw_tos_ts_19820101-20141231_clim_19820101-20141231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
             }
         } else if (T) { # historical3_and_ssp585_2
             dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
             if (F) {
                 nchunks <- 20
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
                 #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
             } else if (F) {
                 nchunks <- 82
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
                 #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
                 #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
                 files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
@@ -66,10 +65,10 @@ if (F) { # sst
                 #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
             } else if (T) {
                 nchunks <- 160
-                pathin <- paste0(workpath, "/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
-                #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData"))
+                pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks)
+                files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData"))
                 #files <- list.files(pathin, glob2rx("awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_31a_withTrend*.RData"))
-                files <- list.files(pathin, glob2rx("mhw_calc_tos_ts_19820101-21001231_clim_19820101-20220101_pctile_90_minDuration_5_fixed_baseline_withTrend_locinds_000014-000020_nloc_7.RData"))
+                #files <- list.files(pathin, glob2rx("mhw_calc_tos_ts_19820101-21001231_clim_19820101-20220101_pctile_90_minDuration_5_fixed_baseline_withTrend_locinds_000014-000020_nloc_7.RData"))
             }
             #subset_from <- as.POSIXct("2080-12-31 23:59:59", tz="UTC")
             #subset_to <- as.POSIXct("1982-12-31 23:59:59", tz="UTC")
@@ -82,7 +81,7 @@ if (F) { # sst
         if (T) { # historical3_and_ssp585_2
             dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
             nchunks <- 160
-            pathin <- paste0(workpath, "/post/heatwaveR/calc/thetao/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/thetao/", dataname, "/nchunks_", nchunks)
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mhw_thetao_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")))
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mhw_thetao_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")))
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mhw_thetao_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData")))
@@ -96,14 +95,14 @@ if (F) { # sst
         if (F) {
             nchunks <- 82
             depth <- "0m"
-            pathin <- paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks)
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")))
             files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")))
         } else if (T) {
             nchunks <- 160
             #depth <- "0m"
             depth <- "200m"
-            pathin <- paste0(workpath, "/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks)
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")))
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")))
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")))
@@ -118,13 +117,13 @@ if (F) { # sst
         if (F) {
             nchunks <- 82
             depth <- "0m"
-            pathin <- paste0(workpath, "/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
             files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
                                                        "_pctile_10_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_withTrend*.RData")))
         } else if (T) {
             nchunks <- 160
             depth <- "0m"
-            pathin <- paste0(workpath, "/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
             #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
             #                                           "_pctile_10_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_31a_withTrend*.RData")))
             files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
@@ -134,7 +133,7 @@ if (F) { # sst
 
 } # which var
 
-if (F) { # will be replaced by post_calc_heatwaveR_loop.r
+if (T) { # will be replaced by post_calc_heatwaveR_loop.r
     files <- files[1:2]
 }
 
@@ -146,15 +145,27 @@ if (T && grepl("awi-", dataname)) {
     remap_cmd <- c("global_1"=paste0("cdo -P ", system("nproc", intern=T), " -remapycon,global_1 -setgrid,/pool/data/AWICM/FESOM1/MESHES/core/griddes.nc <fin> <fout>"))
 } # if setgrid/remap
 
+
 # what to post-process?
+# runtime
+# 1 var:
+# fesom1, nyears 119, nchunks:  82 -> nloc  154[7-8]: max 2h
+# fesom1, nyears 119, nchunks: 160 -> nloc   79[2-3]: max 2h but shorter than 82 nchunks
+# 4 vars:
+# oisst,  nyears  40, nchunks: 30 -> nloc 2303[8-9]:    30h
+# fesom1, nyears  40, nchunks: 20 -> nloc  634[2-3]:   3.3h
+# fesom1, nyears 119, nchunks: 82 -> nloc  154[7-8]: 18.05h +- 3.98h (sd)
+
 calc_timmean <- F # only makes sense with all calc result files, i.e. global
 calc_ts <- T # only makes sense with all calc result files, i.e. global; needs large mem
-vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_cumulative")
+#vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_cumulative")
+#vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_max_relThresh")
+vars_ts_wanted <- c("duration", "nevents", "intensity_max")
 if (F) vars_ts_wanted <- "duration"
 if (F) vars_ts_wanted <- "nevents"
 if (F) vars_ts_wanted <- "intensity_mean"
 if (F) vars_ts_wanted <- "intensity_var"
-if (T) vars_ts_wanted <- "intensity_max"
+if (F) vars_ts_wanted <- "intensity_max"
 if (F) vars_ts_wanted <- "intensity_cumulative"
 calc_ts_verbose <- F # log will be ~GB
 calc_event_inds <- F # can run on specific locations, i.e. chunks
@@ -241,14 +252,6 @@ known_vars <- list(
 
 dpm <- c(Jan=31, Feb=28, Mar=31, Apr=30, May=31, Jun=30, Jul=31, Aug=31, Sep=30, Oct=31, Nov=30, Dec=31)
 
-# runtime 1 var:
-# fesom1, nyears 119, nchunks:  82 -> nloc  154[7-8]: max 2h
-# fesom1, nyears 119, nchunks: 160 -> nloc   79[2-3]: max 2h but shorter than 82 nchunks
-# runtime 4 vars:
-# oisst,  nyears  40, nchunks: 30 -> nloc 2303[8-9]:    30h
-# fesom1, nyears  40, nchunks: 20 -> nloc  634[2-3]:   3.3h
-# fesom1, nyears 119, nchunks: 82 -> nloc  154[7-8]: 18.05h +- 3.98h (sd)
-
 #################################################
 
 # check
@@ -327,7 +330,7 @@ if (F) { # split large calc_heatwaveR.r results into smaller chunks
         from <- files$loc_from[fi]
         to <- files$loc_to[fi]
         if (length(from:to) > 3000) { # split large file
-            tmp <- ceiling(seq(from, to, l=3))
+            tmp <- ceiling(seq(from, to, length.out=3))
             from_new <- c(from, tmp[2]+1)
             to_new <- c(tmp[2], to)
             from_new_inds <- c(1, length(from_new[1]:to_new[1])+1)
@@ -374,7 +377,7 @@ options(width=width) # restore old value
 
 # load data
 message("\nload ", nfiles, " heatwaveR calc results files ...")
-events_all <- opts_all <- opts_global_all <- lms_all <- vector("list", l=nfiles) # outputs of `calc_heatwaveR.r`
+events_all <- opts_all <- opts_global_all <- lms_all <- vector("list", length=nfiles) # outputs of `calc_heatwaveR.r`
 tic <- Sys.time()
 for (fi in seq_len(nfiles)) {
     message("load file ", fi, "/", nfiles, " (", file_sizes_pretty[fi], "): ", files$file[fi], " ...")
@@ -520,7 +523,7 @@ if (is_compound) {
     rm(varunits)
 
     # the following was already checked in compound_heatwaveR but do it here again for sanity
-    spatialdim_opts <- vector("list", l=length(opts_global))
+    spatialdim_opts <- vector("list", length=length(opts_global))
     names(spatialdim_opts) <- names(opts_global)
     for (vari in seq_along(spatialdim_opts)) {
         spatialdim_opts[[vari]]$nspatialdims <- length(opts_global[[vari]]$spatial_dims)
@@ -680,11 +683,11 @@ if (!is.null(subset_from) || !is.null(subset_to)) {
 } # if subsetting
 
 # remove locations that have zero events
-# --> usually not happening when using a fixed baseline as climatology
-# --> might happen when using a (short) running mean
-# --> might happen due to temporal subsetting above
-# --> might happen when compound events
-message("\ncheck for locations with zero events ...")
+message("\ncheck for locations with zero events\n",
+        "--> usually not happening when using a fixed baseline as climatology\n",
+        "--> might happen when using a (short) running mean\n",
+        "--> might happen due to temporal subsetting above\n",
+        "--> might happen when compound events")
 inds <- sapply(lapply(events, is.na), all) # heatwaveR::detect_events returns tibble with nrow=1 all columns NA
 if (any(inds)) {
     inds <- which(inds)
@@ -749,7 +752,7 @@ if (!calc_timmean) {
         if (!exists("lms")) {
             vars_timmean[c("trend_total", "trend_pyr", "trend_pdec")] <- NULL # removes entries
         }
-        datas_timmean <- vector("list", l=length(vars_timmean))
+        datas_timmean <- vector("list", length=length(vars_timmean))
         names(datas_timmean) <- names(vars_timmean)
         for (vi in seq_along(datas_timmean)) {
             message("calc timmean var ", vi, "/", length(datas_timmean), ": ", names(datas_timmean)[vi],
@@ -788,13 +791,13 @@ if (!calc_timmean) {
                                        units="seconds since 1970-1-1",
                                        vals=as.numeric(mean(opts_global$time_dim$vals))) # mean over time series time
 
-        ncdims_spatial <- vector("list", l=nspatialdims)
+        ncdims_spatial <- vector("list", length=nspatialdims)
         for (si in seq_along(ncdims_spatial)) {
             ncdims_spatial[[si]] <- ncdf4::ncdim_def(name=spatialdimnames[si],
                                                      units=opts_global$spatial_dims[[si]]$units,
                                                      vals=opts_global$spatial_dims[[si]]$vals)
         }
-        ncvars <- vector("list", l=length(datas_timmean))
+        ncvars <- vector("list", length=length(datas_timmean))
         names(ncvars) <- names(datas_timmean)
         for (vi in seq_along(datas_timmean)) {
             ncvars[[vi]] <- ncdf4::ncvar_def(name=names(datas_timmean)[vi],
@@ -866,16 +869,19 @@ if (!calc_ts) {
         vars_ts$nevents$longname <- "number of events"
     }
 
-    # todo: so far only monthly output
     ts_from_lt <- as.POSIXlt(ts_from)
     ts_to_lt <- as.POSIXlt(ts_to)
     # use middle of month; could be any dom; does not matter
-    time_out_mon <- seq.POSIXt(as.POSIXct(paste0(ts_from_lt$year+1900, "-", ts_from_lt$mon+1, "-15"), tz="UTC"),
-                               as.POSIXct(paste0(ts_to_lt$year+1900, "-", ts_to_lt$mon+1, "-15"), tz="UTC"),
-                               b="1 mon")
-    time_out_mon <- as.POSIXlt(time_out_mon)
-    message("`time_out_mon` from ", min(time_out_mon), " to ", max(time_out_mon), ":")
-    cat(capture.output(str(time_out_mon)), sep="\n")
+    if (T) { # todo: so far only monthly output
+        time_out_mon <- seq.POSIXt(as.POSIXct(paste0(ts_from_lt$year+1900, "-", ts_from_lt$mon+1, "-15"), tz="UTC"),
+                                   as.POSIXct(paste0(ts_to_lt$year+1900, "-", ts_to_lt$mon+1, "-15"), tz="UTC"),
+                                   b="1 mon")
+        time_out_mon <- as.POSIXlt(time_out_mon)
+        message("`time_out_mon` from ", min(time_out_mon), " to ", max(time_out_mon), ":")
+        cat(capture.output(str(time_out_mon)), sep="\n")
+    } else {
+        stop("not implemented")
+    }
 
     # one (space,time) output file for each mhw variable to better handle large output files
     for (vi in seq_along(vars_ts)) {
@@ -959,7 +965,7 @@ if (!calc_ts) {
                     }
 
                     # repeat spatial inds for all output time inds
-                    inds <- base::cbind(t(matrix(rep(loc_inds, t=length(time_inds_mon)), ncol=length(time_inds_mon))), time_inds_mon,
+                    inds <- base::cbind(t(matrix(rep(loc_inds, times=length(time_inds_mon)), ncol=length(time_inds_mon))), time_inds_mon,
                                         deparse.level=0) # deparse.level=0: do not make labels
                     # e.g. output time points 5,6,7 at location 3 (1D space dim):
                     # 3 5
@@ -1079,7 +1085,7 @@ if (!calc_ts) {
                                            units="seconds since 1970-1-1",
                                            vals=as.numeric(time_out_mon))
 
-            ncdims_spatial <- vector("list", l=nspatialdims)
+            ncdims_spatial <- vector("list", length=nspatialdims)
             for (si in seq_along(ncdims_spatial)) {
                 ncdims_spatial[[si]] <- ncdf4::ncdim_def(name=spatialdimnames[si],
                                                          units=opts_global[[1]]$spatial_dims[[si]]$units,
@@ -1250,7 +1256,7 @@ if (calc_event_inds) {
                     # start and end of current event at current location
                     start_of_event <- as.POSIXlt(events[[loci]]$date_start[eventi])
                     end_of_event <- as.POSIXlt(events[[loci]]$date_end[eventi])
-                    days_of_event <- as.POSIXlt(seq(start_of_event, end_of_event, b="1 day"))
+                    days_of_event <- as.POSIXlt(seq(start_of_event, end_of_event, by="1 day"))
                     months_of_event <- as.integer(unique(days_of_event$mon)+1)
                     years_of_event <- as.integer(unique(days_of_event$year)+1900)
 
@@ -1259,7 +1265,7 @@ if (calc_event_inds) {
                         inds <- which(days_of_event$year+1900 == years_of_event[yi])
                         start_of_event_yi <- days_of_event[inds[1]]
                         end_of_event_yi <- days_of_event[inds[length(inds)]]
-                        months_of_event_yi <- seq(start_of_event_yi$mon, end_of_event_yi$mon, b=1) + 1 # +1 due to posix
+                        months_of_event_yi <- seq(start_of_event_yi$mon, end_of_event_yi$mon, by=1) + 1 # +1 due to posix
 
                         # full day of event start date
                         end_of_event_yi$hour <- 23
