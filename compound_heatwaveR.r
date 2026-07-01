@@ -17,7 +17,7 @@ library(tibble) # to mimic heatwaveR::detect_event()
 verbose <- F
 #options(warn=2)
 
-if (T) { # mhw + lox compounds; ce_tos_bgc22
+if (T) { # mhw + lox compounds; ce_tos_bgc2
     if (T) { # awi-esm-1-1-lr_kh800
         varnames <- c("tos", "bgc22")
         if (T) { # historical3_and_ssp585_2

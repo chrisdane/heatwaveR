@@ -38,6 +38,7 @@ if (F) { # oisst
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_runmean_15"
     prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc06_0m_fixed"
     replace_string <- list(string="    location_inds <- ", between_lines=c(256, 258)) #(248, 250)
+
     start <- 1; end <- 126859
     #njobs_wanted <- 10
     #njobs_wanted <- 20

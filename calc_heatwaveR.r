@@ -56,7 +56,7 @@ rm(list=ls()); graphics.off()
 op_warn <- options()$warn
 op_width <- options()$width
 library(ncdf4)
-library(heatwaveR) # 0.4.6: https://cran.r-project.org/src/contrib/Archive/heatwaveR/heatwaveR_0.4.6.tar.gz
+library(heatwaveR, lib.loc="/home/a/a270073/scripts/r/packages/bin/r_4.1") # 0.4.6: https://cran.r-project.org/src/contrib/Archive/heatwaveR/heatwaveR_0.4.6.tar.gz
 
 # default heatwaveR package options
 heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); default: 5 days
@@ -197,7 +197,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
         ts_to <- as.POSIXct("2100-12-31 23:59:50", tz="UTC")
         clim_from <- as.POSIXct("1982-1-1", tz="UTC")
         #clim_to <- as.POSIXct("2011-12-31 23:59:59", tz="UTC")
-        clim_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC")
+        clim_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC") 
         if (F) { # tos
             varname <- "tos"; units <- "°C"
             heatwaveR_opts$pctile <- 90
