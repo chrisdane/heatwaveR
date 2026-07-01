@@ -65,7 +65,7 @@ heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); defaul
                        clim_runmean=15,
                        MCScorrect=F,     # for heatwaveR::detect_event(); default: F; passed to heatwaveR::category(): do not let seawater temp threshold go below -1.8°C
                        calc_trend=T,     # save trend of original data
-                       remove_trend=F,   # remove trend of original data before extreme event detection
+                       remove_trend=T,   # remove trend of original data before extreme event detection
                        climatology=F,    # for heatwaveR::detect_event(); default: F; passed to hewatwaveR::category(): returns more details
                        var=T,            # for heatwaveR::detect_event(); default: F; calc var in addition; if true, will run heatwaveR:::clim_calc_cpp and not clim_calc
                        roundClm=F        # for heatwaveR::ts2clm(); default: 4; round clim and thres values; !!! this actually depends on the variable; keep F !!!
@@ -252,7 +252,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_40")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
-    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
+    pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
     if (T) {
         location_inds <- 14:20 # 92813 # 14:20 # this line will be replaced by calc_heatwaveR_loop.r
     }

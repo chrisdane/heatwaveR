@@ -37,7 +37,7 @@ if (F) { # oisst
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_runmean_31"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_runmean_15"
     prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc06_0m_fixed"
-    replace_string <- list(string="    location_inds <- ", between_lines=c(248, 250))
+    replace_string <- list(string="    location_inds <- ", between_lines=c(256, 258)) #(248, 250)
     start <- 1; end <- 126859
     #njobs_wanted <- 10
     #njobs_wanted <- 20
@@ -166,10 +166,10 @@ for (jobi in seq_len(njobs)) {
                  #"#SBATCH --time=08:00:00        # Set a limit on the total run time",
                  #"#SBATCH --time=14:00:00        # Set a limit on the total run time",
                  #"#SBATCH --mail-type=FAIL       # Notify user by email in case of job failure",
-                 #"#SBATCH --account=ab1095       # Charge resources on this project account",
+                 "#SBATCH --account=ab1095       # Charge resources on this project account",
                  #"#SBATCH --account=ab0246       # Charge resources on this project account",
                  #"#SBATCH --account=ba0989       # Charge resources on this project account",
-                 "#SBATCH --account=ba1103       # Charge resources on this project account",
+                 #"#SBATCH --account=ba1103       # Charge resources on this project account",
                  # memory:
                  #"#SBATCH --mem=0                    # 0 = use all mem",
                  "#SBATCH --mem=15000M                    # 0 = use all mem",
