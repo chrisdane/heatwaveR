@@ -55,19 +55,19 @@
 rm(list=ls()); graphics.off()
 op_warn <- options()$warn
 op_width <- options()$width
-library(ncdf4)
+library(ncdf4, lib.loc="/home/a/a270073/scripts/r/packages/bin/r_4.1") # ncdf4 must be (at least) > 1.17 for correct chunking
 library(heatwaveR, lib.loc="/home/a/a270073/scripts/r/packages/bin/r_4.1") # 0.4.6: https://cran.r-project.org/src/contrib/Archive/heatwaveR/heatwaveR_0.4.6.tar.gz
 
 # default heatwaveR package options
 heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); default: 5 days
-                       #clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
+                       clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
                        #clim_runmean=31,
-                       clim_runmean=15,
+                       #clim_runmean=15,
                        MCScorrect=F,     # for heatwaveR::detect_event(); default: F; passed to heatwaveR::category(): do not let seawater temp threshold go below -1.8°C
                        calc_trend=T,     # save trend of original data
-                       remove_trend=T,   # remove trend of original data before extreme event detection
+                       remove_trend=F,   # remove trend of original data before extreme event detection
                        climatology=F,    # for heatwaveR::detect_event(); default: F; passed to hewatwaveR::category(): returns more details
-                       var=T,            # for heatwaveR::detect_event(); default: F; calc var in addition; if true, will run heatwaveR:::clim_calc_cpp and not clim_calc
+                       var=T,            # for heatwaveR::detect_event(); default: F; calc var in addition; if true, will run heatwaveR:::clim_calc and not clim_calc_cpp
                        roundClm=F        # for heatwaveR::ts2clm(); default: 4; round clim and thres values; !!! this actually depends on the variable; keep F !!!
                        )
 
@@ -110,39 +110,98 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     ts_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC")
     clim_from <- ts_from
     clim_to <- ts_to
-    workpath <- "/work/ba1103/a270073"
     if (F) { # time,lat,lon; sst:_ChunkSizes = 1, 720, 1440; 3-4 min
-        pathin <- paste0(workpath, "/data/oisst/data/v2/daily")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2/daily"
         files <- list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T)
-        pathin <- paste0(workpath, "/data/oisst/data/v2.1/daily")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2.1/daily"
         files <- c(files, list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T))
     } else if (F) { # time,lat,lon; sst:_ChunkSizes = 366, 720, 1; 0.195861 sec
-        pathin <- paste0(workpath, "/data/oisst/data/v2/daily/chunked_ntime_nlat720_nlon1")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2/daily/chunked_ntime_nlat720_nlon1"
         files <- list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T)
-        pathin <- paste0(workpath, "/data/oisst/data/v2.1/daily/chunked_ntime_nlat720_nlon1")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2.1/daily/chunked_ntime_nlat720_nlon1"
         files <- c(files, list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T))
     } else if (T) { # time,lat,lon; sst:_ChunkSizes = 366, 1, 1440; 0.008778555 sec
-        pathin <- paste0(workpath, "/data/oisst/data/v2/daily/chunked_ntime_nlat1_nlon1440")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2/daily/chunked_ntime_nlat1_nlon1440"
         files <- list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T)
-        pathin <- paste0(workpath, "/data/oisst/data/v2.1/daily/chunked_ntime_nlat1_nlon1440")
+        pathin <- "/work/ba1103/a270073/data/oisst/data/v2.1/daily/chunked_ntime_nlat1_nlon1440"
         files <- c(files, list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T))
     }
     files_from <- substr(basename(files), 14, 17) # sst.day.mean.YYYY.v2.nc
     files_to <- files_from
     files_from <- paste0(files_from, "-01-01") # per
     files_to <- paste0(files_to, "-12-31")     # file
-    pathout <- paste0(workpath, "/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_30")
+    pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_30")
     #location_inds <- 181067
     #location_inds <- 14:20
     #location_inds <- 1:50
     #location_inds <- 181067:181100
-    location_inds <- read.table(paste0(workpath, "/data/oisst/data/sea_inds_lsmask.oisst.v2.txt"), header=T, quote="") # only seapoints
+    location_inds <- read.table(paste0("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt"), header=T, quote="") # only seapoints
     location_inds <- location_inds$ind
     if (T) {
         location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
     }
 
-} else if (T) { # awi-esm-1-1-lr_kh800
+} else if (F) { # occci data
+    dataname <- "occci"
+    varname <- "chlor_a"
+    heatwaveR_opts$pctile <- 90
+    timedimname <- "time"
+    spatialdimnames <- c("lon", "lat") # order does not matter
+    #ts_from <- 1997 # incomplete year
+    ts_from <- as.POSIXct("1998-1-1", tz="UTC") # first complete year
+    ts_to <- as.POSIXct("2025-12-31 23:59:59", tz="UTC")
+    clim_from <- ts_from
+    clim_to <- ts_to
+    if (T) { # time,lat,lon; sst:_ChunkSizes = 366, 1, 1440
+        pathin <- "/work/ab1095/a270317/data/rechunked"
+        files <- list.files(pathin, pattern=glob2rx("ESACCI-OC-L3S-CHLOR_A-MERGED-1D_ANNUAL_4km_GEO_PML_OCx-????-fv6.0.nc"), full.names=T) # problem: many spatio-temporal gaps
+    }
+    files_from <- substr(basename(files), 56, 59) # ESACCI-OC-L3S-CHLOR_A-MERGED-1D_ANNUAL_4km_GEO_PML_OCx-????-fv6.0.nc
+    files_to <- files_from
+    files_from <- paste0(files_from, "-01-01") # per
+    files_to <- paste0(files_to, "-12-31")     # file
+    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
+    #location_inds <- 181067
+    #location_inds <- 14:20
+    #location_inds <- 1:50
+    #location_inds <- 181067:181100
+    location_inds <- read.table("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt", header=T, quote="") # only seapoints
+    location_inds <- location_inds$ind
+    if (F) {
+        location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
+    }
+
+} else if (T) { # cmens data
+    dataname <- "cmens"
+    varname <- "CHL"
+    heatwaveR_opts$pctile <- 90
+    timedimname <- "time"
+    spatialdimnames <- c("lon", "lat") # order does not matter
+    ts_from <- as.POSIXct("1998-1-1", tz="UTC") # first complete year
+    ts_to <- as.POSIXct("2025-12-31 23:59:59", tz="UTC")
+    clim_from <- ts_from
+    clim_to <- ts_to
+    if (T) { # time,lat,lon; sst:_ChunkSizes = 366, 1, 1440
+        pathin <- paste0("/work/ab1095/a270317/data/copernicus/OCEANCOLOUR_GLO_BGC_L4_MY_009_104/cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D_202603/rechunked")
+        files <- list.files(pathin, pattern=glob2rx("????.nc"), full.names=T)
+    }
+    files_from <- substr(basename(files), 1, 4) # ????.nc
+    files_to <- files_from
+    files_from <- paste0(files_from, "-01-01") # per
+    files_to <- paste0(files_to, "-12-31")     # file
+    #pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
+    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
+    #location_inds <- 181067
+    #location_inds <- 14:20
+    #location_inds <- 1:50
+    #location_inds <- 181067:181100
+    location_inds <- read.table(paste0("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt"), header=T, quote="") # only seapoints
+    location_inds <- location_inds$ind
+    if (T) {
+        location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
+    }
+
+} else if (F) { # awi-esm-1-1-lr_kh800
     timedimname <- "time"
     if (F) { # piControl
         dataname <- "awi-esm-1-1-lr_kh800_piControl"
@@ -197,7 +256,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
         ts_to <- as.POSIXct("2100-12-31 23:59:50", tz="UTC")
         clim_from <- as.POSIXct("1982-1-1", tz="UTC")
         #clim_to <- as.POSIXct("2011-12-31 23:59:59", tz="UTC")
-        clim_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC") 
+        clim_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC")
         if (F) { # tos
             varname <- "tos"; units <- "°C"
             heatwaveR_opts$pctile <- 90
@@ -252,7 +311,8 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_40")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
-    pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
+    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
+    #pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
     if (T) {
         location_inds <- 14:20 # 92813 # 14:20 # this line will be replaced by calc_heatwaveR_loop.r
     }
@@ -293,12 +353,12 @@ if (F) { # plot runtime
     if (length(nyears) != length(nchunks)) stop("asd")
     if (length(nlocs) != length(elapseds)) stop("asd")
     if (length(nyears) != length(nlocs)) stop("asd")
-    plot(nlocs, nyears, t="n", xlab="nlocs x 1e3", ylab="nyears", xaxt="n", yaxt="n")
+    plot(nlocs, nyears, type="n", xlab="nlocs x 1e3", ylab="nyears", xaxt="n", yaxt="n")
     axis(1, pretty(nlocs, n=10), labels=pretty(nlocs/1e3, n=10))
     axis(2, pretty(nyears, n=10), las=2)
     text(nlocs, nyears, paste0(elapseds, "h"))
     par(new=T)
-    plot(nchunks, nyears, t="n", xlim=rev(range(nchunks)), xlab="", ylab="", axes=F)
+    plot(nchunks, nyears, type="n", xlim=rev(range(nchunks)), xlab="", ylab="", axes=F)
     axis(3, pretty(nchunks))
     mtext("nchunks", side=3, line=2)
 }
@@ -436,7 +496,7 @@ for (fi in seq_along(files$file)) {
                  length(ncs[[fi]]$var), " available variables: \"",
                  paste(names(ncs[[fi]]$var), collapse="\", \""), "\".")
         }
-        varname_atts <- ncdf4::ncatt_get(ncs[[fi]], varname)
+        varname_atts <- suppressWarnings(ncdf4::ncatt_get(ncs[[fi]], varname)) # suppress warning partial match of 'group' to 'groups'
         if (is.null(varname_atts$units)) {
             message("this variable has no attribute called \"units\"\n",
                     "--> use user provided `units` ...")
@@ -485,7 +545,7 @@ for (fi in seq_along(files$file)) {
         }
     }
     if (!is.null(msg)) {
-        msg_dims <- rep(1, t=nspatialdims)
+        msg_dims <- rep(1, times=nspatialdims)
         if (nspatialdims == 1) {
             msg_dims[1] <- spatial_dims[[1]]$len
         } else if (nspatialdims == 2) {
@@ -552,9 +612,10 @@ time <- as.POSIXct(time_numeric, origin="1970-1-1", tz="UTC")
 ntime <- length(time)
 message("\ntime:")
 cat(capture.output(str(time, vec.len=20)), sep="\n")
-dt_day <- difftime(time[2:ntime], time[1:(ntime-1)], units="day")
+dt_day <- as.numeric(difftime(time[2:ntime], time[1:(ntime-1)], units="day"))
 if (!all(unique(dt_day) == 1)) { # todo: allow non-daily data?
-    stop("dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
+    #stop("dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
+    message("warn: dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
 }
 rm(dt_day)
 
@@ -580,19 +641,19 @@ message("\ngot ", ntime, " input timepoints from ", min(time), " to ", max(time)
         "--> clim_from = ", clim_from, " to clim_to = ", clim_to)
 
 # get dt of complete time series in years
-ts_to_p1d <- ts_to + 86400L # plus 1 day
-ts_to_p1d_posixlt <- as.POSIXlt(ts_to_p1d)
 dpm <- c(Jan=31, Feb=28, Mar=31, Apr=30, May=31, Jun=30, Jul=31, Aug=31, Sep=30, Oct=31, Nov=30, Dec=31)
 if (ts_from_posixlt$mon+1 == 2 &&
     ((((ts_from_posixlt$year+1900) %% 4 == 0) & ((ts_from_posixlt$year+1900) %% 100 != 0)) | ((ts_from_posixlt$year+1900) %% 400 == 0))) { # leap year
     ts_from_yr <- ts_from_posixlt$year+1900 +       # assuming
                     (ts_from_posixlt$mon)/12 +      # start of day
                     (ts_from_posixlt$mday-1)/29/12  # --> hour = min = sec = 0
-} else {
+} else { # no leap year
     ts_from_yr <- ts_from_posixlt$year+1900 +                               # assuming
                     (ts_from_posixlt$mon)/12 +                              # start of day
                     (ts_from_posixlt$mday-1)/dpm[ts_from_posixlt$mon+1]/12  # --> hour = min = sec = 0
 }
+ts_to_p1d <- ts_to + 86400L # plus 1 day
+ts_to_p1d_posixlt <- as.POSIXlt(ts_to_p1d)
 if (ts_to_p1d_posixlt$mon+1 == 2 &&
     ((((ts_to_p1d_posixlt$year+1900) %% 4 == 0) & ((ts_to_p1d_posixlt$year+1900) %% 100 != 0)) | ((ts_to_p1d_posixlt$year+1900) %% 400 == 0))) { # leap year
     ts_to_yr <- ts_to_p1d_posixlt$year+1900 +
@@ -601,7 +662,7 @@ if (ts_to_p1d_posixlt$mon+1 == 2 &&
                     #23/24/29/12 +       # assuming
                     #59/60/24/29/12 +    # full day
                     #59/60/60/24/29/12   # by using +1 day
-} else {
+} else { # no leap year
     ts_to_yr <- ts_to_p1d_posixlt$year+1900 +
                     (ts_to_p1d_posixlt$mon)/12 +
                     (ts_to_p1d_posixlt$mday-1)/dpm[ts_to_p1d_posixlt$mon+1]/12# +
@@ -610,30 +671,8 @@ if (ts_to_p1d_posixlt$mon+1 == 2 &&
                     #59/60/60/24/dpm[ts_to_posixlt$mon+1]/12   # by using + 1 day
 }
 ts_dt_yrs <- unname(ts_to_yr - ts_from_yr) # e.g. from 1982-05-31 to 1983-05-31 = 1983.417 - 1982.414 =   1.002688 yrs
-                                           #      from 1982-01-01 to 2101-12-31 = 2101     - 1982     = 119        yrs
+                                           #      from 1982-01-01 to 2100-12-31 = 2100     - 1982     = 119        yrs
 message("--> ts_dt_yrs = ", ts_dt_yrs, " years")
-
-if (F) { # update
-    message("climatology from clim_from=", clim_from, " to clim_to=", clim_to)
-    if (clim_from < min(time)) {
-        message("--> start of clim period is before first date of time series data")
-        tmp1 <- as.POSIXlt(clim_from)
-        if (tmp1$year == ts_from_posixlt$year && tmp1$mon == ts_from_posixlt$mon && tmp1$mday == ts_from_posixlt$mday) { # same year,month,day
-            message("--> but its the same day --> continue")
-        } else {
-            stop("change time range of data and/or `clim_from`")
-        }
-    }
-    if (clim_to > max(time)) {
-        message("--> end of clim period is later than last date of time series data")
-        tmp1 <- as.POSIXlt(clim_to)
-        if (tmp1$year == ts_to_posixlt$year && tmp1$mon == ts_to_posixlt$mon && tmp1$mday == ts_to_posixlt$mday) { # same year,month,day
-            message("--> but its the same day --> continue")
-        } else {
-            stop("change time range of data and/or `clim_to`")
-        }
-    }
-}
 
 # make spatial index mapping for looping through locations
 message("\nmake mapping (", nspatialdims, "-spatial-dims inds) <--> (1-spatial-dim inds) for looping through locations ...")
@@ -661,8 +700,8 @@ if (!is.null(location_inds)) {
 
 # construct fout
 fout <- paste0(pathout, "/",
+               "calc_", varname,
                ifelse(heatwaveR_opts$coldSpells, "mcs", "mhw"),
-               "_calc_", varname,
                ifelse(is.null(depth), "", paste0("_", depth)),
                "_ts_", format(ts_from, "%Y%m%d"), "-", format(ts_to, "%Y%m%d"),
                "_clim_",  format(clim_from, "%Y%m%d"), "-", format(clim_to, "%Y%m%d"),
@@ -685,15 +724,16 @@ message("\ncalc heatwaveR (version ", heatwaveR_opts$packageVersion, ") paramete
 clms <- events <- cats <- opts <- list()
 if (heatwaveR_opts$calc_trend || heatwaveR_opts$remove_trend) lms <- clms
 cnt <- 0
-elapsed_all <- rep(NA, t=nloc)
+elapsed_all <- rep(NA, times=nloc)
 for (loci in seq_len(nloc)) {
+#for (loci in 70) {
     locinds <- unlist(mapping_df[loci,])
-    locvals <- rep(NA, t=nspatialdims)
+    locvals <- rep(NA, times=nspatialdims)
     names(locvals) <- names(locinds)
     for (si in seq_len(nspatialdims)) {
         locvals[si] <- spatial_dims[[si]]$vals[locinds[si]]
     }
-    start <- rep(1, t=length(vardimnames_in))
+    start <- rep(1, times=length(vardimnames_in))
     names(start) <- vardimnames_in
     count <- start
     start[match(spatialdimnames, vardimnames_in)] <- locinds
@@ -746,10 +786,19 @@ for (loci in seq_len(nloc)) {
                 message("ts length ", ntime, " <= 3 too short for lm. skip")
                 lm <- NA
             } else {
-                lm <- stats::lm(data ~ as.numeric(time))
+                timen <- as.numeric(time) # always seconds
+                lm <- stats::lm(data ~ timen)
                 lm_summary <- summary(lm)
                 if (!is.na(lm_summary$coefficients[2,4])) { # if lm was successfull
-                    lm_slope_pyr <- unname((lm$fitted.values[ntime] - lm$fitted.values[1])/ts_dt_yrs)
+                    if (F) { # this is wrong as it assumes that there are no missing data in time series
+                        lm_slope_pyr <- unname((lm$fitted.values[ntime] - lm$fitted.values[1])/ts_dt_yrs)
+                    } else if (T) {
+                        #lm_n <- length(lm$fitted.values)
+                        #lm_dt_sec <- lm$model[["timen"]][lm_n] - lm$model[["timen"]][1]
+                        #lm_slope_pyr <- unname(lm$fitted.values[lm_n] - lm$fitted.values[1])/lm_dt_sec*365.25*86400
+                        lm_slope_pyr <- unname(lm$coefficients[2])*365.25*86400 # slope is s-1
+                        # --> both `lm_slope_pyr` are equal
+                    }
                     attr(lm_slope_pyr, "units") <- varname_atts$units
                     lm_label <- paste0("r=", round(sqrt(lm_summary$r.squared), 2), ", p")
                     lm_pval <- lm_summary$coefficients[2,4]
@@ -777,7 +826,7 @@ for (loci in seq_len(nloc)) {
 
         # remove linear trend of time series before heatwaveR calculations
         if (heatwaveR_opts$remove_trend && all(is.na(lm))) {
-            message("linear trend calculation was not successfull. skip location")
+            message("`heatwaveR_opts$remove_trend` is true but linear trend calculation was not successfull. skip location")
             # skip to next location
 
         } else { # calc extreme events
@@ -791,44 +840,12 @@ for (loci in seq_len(nloc)) {
 
             # prepare for heatwaveR functions
             data <- data.frame(t=as.Date(time), temp=data) # todo: column names must be t and temp
+            # 'data.frame':   43464 obs. of  2 variables:
+            #  $ t   : Date, format: "1982-01-01" "1982-01-02" ...
+            #  $ temp: num  0.146 0.145 0.144 0.141 0.137 ...
+            # --> 119 years from 1982 to 2100 incl. 29 leap years --> 29*366 + 90*365 = 43464
 
             # get climatology and threshold
-            if (!is.na(heatwaveR_opts$clim_runmean)) { # calc clim/thresh wrt running mean
-                message("`heatwaveR_opts$clim_runmean` = ", heatwaveR_opts$clim_runmean,
-                        " != NA --> run heatwaveR::ts2lim ", length(years_unique), " times for every year ...")
-                seas <- thresh <- rep(NA, t=ntime)
-                for (yi in seq_along(years_unique)) {
-                    climatologyPeriod <- as.POSIXlt(c(paste0(max(years_unique[yi] - floor(heatwaveR_opts$clim_runmean/2), ts_from_posixlt$year+1900L), format(clim_from, "-%m-%d")),
-                                                      paste0(min(years_unique[yi] + floor(heatwaveR_opts$clim_runmean/2), ts_to_posixlt$year+1900L), format(clim_to, "-%m-%d"))))
-                    message("--> year ", yi, "/", length(years_unique), ": ", years_unique[yi],
-                            ": climatologyPeriod = ", paste(climatologyPeriod, collapse=" to "), " (", climatologyPeriod$year[2] - climatologyPeriod$year[1] + 1, " years)")
-                    clm <- heatwaveR::ts2clm(data,
-                                             climatologyPeriod=climatologyPeriod,
-                                             pctile=heatwaveR_opts$pctile,
-                                             var=heatwaveR_opts$var,
-                                             roundClm=heatwaveR_opts$roundClm
-                                             )
-                    inds <- which(time_posixlt$year+1900L == years_unique[yi])
-                    if (length(inds) == 0) stop("this should not happen")
-                    if (length(inds) > 366) stop("this should not happen")
-                    seas[inds] <- clm$seas[seq_along(inds)] # first 365/366
-                    thresh[inds] <- clm$thresh[seq_along(inds)] # first 365/366
-                } # for yi
-                clm$seas <- seas
-                clm$thresh <- thresh
-                rm(seas, thresh)
-
-            } else { # calc clim/thresh wrt fixed baseline or detrended
-                message("`heatwaveR_opts$clim_runmean` is NA --> run heatwaveR::ts2lim with climatologyPeriod from ",
-                        paste(climatologyPeriod, collapse=" to "), " ...")
-                clm <- heatwaveR::ts2clm(data,
-                                         climatologyPeriod=climatologyPeriod,
-                                         pctile=heatwaveR_opts$pctile,
-                                         var=heatwaveR_opts$var,
-                                         roundClm=heatwaveR_opts$roundClm
-                                         ) # ~480K for ~11k ntime
-            }
-
             # calls in `ts2clm`:
             # 1)    ts_xy <- data.table::data.table(ts_x = ts_x, ts_y = ts_y)[base::order(ts_x)]
             # --> Classes ‘data.table’ and 'data.frame':  43464 obs. of  2 variables:
@@ -884,6 +901,15 @@ for (loci in seq_len(nloc)) {
             # $ temp  : num [1:43464] -1.62 -1.63 -1.63 -1.63 -1.62 ...
             # $ seas  : num [1:43464] 2.04 2.12 2.21 2.29 2.37 ...
             # $ thresh: num [1:43464] 4.37 4.46 4.54 4.62 4.7 ...
+                    # tibble [43,464 × 6] (S3: tbl_df/tbl/data.frame)
+                    #  $ doy   : int [1:43464] 1 2 3 4 5 6 7 8 9 10 ...
+                    #  $ t     : Date[1:43464], format: "1982-01-01" "1982-01-02" ...
+                    #  $ temp  : num [1:43464] 0.146 0.145 0.144 0.141 0.137 ...
+                    #  $ seas  : num [1:43464] 0.154 0.152 0.149 0.147 0.144 ...
+                    #  $ thresh: num [1:43464] 0.122 0.121 0.12 0.119 0.117 ...
+                    #  $ var   : num [1:43464] 0.0267 0.0256 0.0246 0.0238 0.0231 ...
+                    #  - attr(*, ".internal.selfref")=<externalptr>
+                    # --> 119 years from 1982 to 2100 incl. 29 leap years --> 29*366 + 90*365 = 43464
 
             # new heatwave3 package:
             # 1) heatwave3::detect3():
@@ -898,20 +924,71 @@ for (loci in seq_len(nloc)) {
             # ts_mat <- clim_calc(ts_mat, windowHalfWidth, pctile)
             # --> uses heatwaveR::clim_calc
             # --> climatology and threshold calculation identical as in old heatwaveR package
+            if (!is.na(heatwaveR_opts$clim_runmean)) { # calc clim/thresh wrt running mean
+                message("`heatwaveR_opts$clim_runmean` = ", heatwaveR_opts$clim_runmean,
+                        " != NA --> run heatwaveR::ts2lim ", length(years_unique), " times for every year ...")
+                seas <- thresh <- rep(NA, times=ntime)
+                for (yi in seq_along(years_unique)) {
+                    climatologyPeriod <- as.POSIXlt(c(paste0(max(years_unique[yi] - floor(heatwaveR_opts$clim_runmean/2), ts_from_posixlt$year+1900L), format(clim_from, "-%m-%d")),
+                                                      paste0(min(years_unique[yi] + floor(heatwaveR_opts$clim_runmean/2), ts_to_posixlt$year+1900L), format(clim_to, "-%m-%d"))))
+                    message("--> year ", yi, "/", length(years_unique), ": ", years_unique[yi],
+                            ": climatologyPeriod = ", paste(climatologyPeriod, collapse=" to "), " (", climatologyPeriod$year[2] - climatologyPeriod$year[1] + 1, " years)")
+                    clm <- heatwaveR::ts2clm(data,
+                                             climatologyPeriod=climatologyPeriod,
+                                             pctile=heatwaveR_opts$pctile,
+                                             var=heatwaveR_opts$var,
+                                             roundClm=heatwaveR_opts$roundClm
+                                             )
 
+                    inds <- which(time_posixlt$year+1900L == years_unique[yi])
+                    if (length(inds) == 0) stop("this should not happen")
+                    if (length(inds) > 366) stop("this should not happen")
+                    seas[inds] <- clm$seas[seq_along(inds)] # first 365/366
+                    thresh[inds] <- clm$thresh[seq_along(inds)] # first 365/366
+                } # for yi
+                clm$seas <- seas
+                clm$thresh <- thresh
+                rm(seas, thresh)
+
+                if (F) { # get daily clim
+                    test_filter <- stats::filter(data$temp, filter=rep(1/15*365, times=15*365)) # does not work
+                    test_doy <- base::tapply(data$temp, time_posixlt$yday+1L, base::mean, na.rm=T) # returns similar result as clm_fixed$seas[1:366]
+                }
+
+            } else { # calc clim/thresh wrt fixed baseline or detrended
+                message("`heatwaveR_opts$clim_runmean` is NA --> run heatwaveR::ts2lim with climatologyPeriod from ",
+                        paste(climatologyPeriod, collapse=" to "), " ...")
+                clm <- heatwaveR::ts2clm(data,
+                                         climatologyPeriod=climatologyPeriod,
+                                         pctile=heatwaveR_opts$pctile,
+                                         var=heatwaveR_opts$var,
+                                         roundClm=heatwaveR_opts$roundClm
+                                         ) # ~480K for ~11k ntime
+            }
+            if (F) { # clm_fixed vs clm_15a
+                png("climatology_fixed_vs_15yr_runmean.png", width=2100, height=1575, res=300, family="Droid Sans")
+                par(mar=c(5.1, 4.1, 4.1, 4.5))
+                plot(time_posixlt, clm_fixed$seas, type="n", ylim=range(clm_fixed$seas, clm_15a$seas),
+                     xaxt="n", yaxt="n",
+                     xlab="year", ylab="daily SST climatology [°C]")
+                axis.POSIXct(1, at=pretty(time_posixlt, n=15), format="%Y")
+                axis(2, at=pretty(range(clm_fixed$seas, clm_15a$seas), n=10), las=2)
+                lines(time_posixlt, clm_fixed$seas)
+                lines(time_posixlt, clm_15a$seas, col=2)
+                legend("topleft", c("fixed", "15-yr run mean"), col=c(1, 2), lty=1, pch=NA, bty="n")
+                par(new=T)
+                anom <- clm_15a$seas - clm_fixed$seas
+                plot(time_posixlt, anom, type="l", col="blue", axes=F, xlab="", ylab="")
+                axis(4, at=pretty(anom, n=10), las=2)
+                mtext("15-yr minus fixed [°C]", 4, 2.75)
+                legend("topright", c("daily anom: 15-yr minus fixed"), col="blue", lty=1, pch=NA, bty="n")
+                dev.off()
+            }
+
+            # detect extreme events
             if (all(is.na(clm$thresh))) {
                 event <- NA
             } else {
-
-                message("run heatwaveR::detect_event with `categories=T` ...")
-                event <- heatwaveR::detect_event(clm,
-                                                 minDuration=heatwaveR_opts$minDuration,
-                                                 coldSpells=heatwaveR_opts$coldSpells,
-                                                 categories=T,
-                                                 S=T, # for category(): southern hemisphere? can be ignored: just determines `season`; keep default T
-                                                 climatology=heatwaveR_opts$climatology, # for category(): if true, returns more detailed information
-                                                 MCScorrect=heatwaveR_opts$MCScorrect # for category(): limit MCS temperature threshold to -1.8°C
-                                                ) # ~850K for ~11k ntime
 
                 # calls in `detect_event`:
                 # 1) heatwaveR::detect_event():
@@ -951,6 +1028,34 @@ for (loci in seq_len(nloc)) {
                 # df_event <- heatwaveR::detect_event3(df_sub, minDuration = min_dur, maxGap = max_gap, ...)$event
                 # --> uses heatwaveR::detect_event3
 
+                message("run heatwaveR::detect_event with `categories=T` ...")
+                event <- suppressWarnings( # suppress partial match warnings within `heatwaveR::detect_event` and `heatwaveR::cateory`
+                             heatwaveR::detect_event(clm,
+                                                     minDuration=heatwaveR_opts$minDuration,
+                                                     coldSpells=heatwaveR_opts$coldSpells,
+                                                     categories=T,
+                                                     S=T, # for category(): southern hemisphere? can be ignored: just determines `season`; keep default T
+                                                     climatology=heatwaveR_opts$climatology, # for category(): if true, returns more detailed information
+                                                     MCScorrect=heatwaveR_opts$MCScorrect # for category(): limit MCS temperature threshold to -1.8°C
+                                                    ) # ~850K for ~11k ntime
+                        )
+
+                if (F) {
+                    inds=which(time_posixlt$year+1900L >= 2000 & time_posixlt$year+1900L <= 2004)
+                    png("threshold_padding.png", width=2666, height=1500, res=300, family="Droid Sans")
+                    plot(time[inds], data$temp[inds], type="n", yaxt="n")
+                    axis(2, at=pretty(data$temp[inds]), las=2)
+                    for (i in seq_len(nrow(event_pad366))) rect(as.POSIXct(event_pad366$date_start[i]), par("usr")[3], as.POSIXct(event_pad366$date_end[i]), par("usr")[4], col=col2rgba("red", 0.1), border=NA)
+                    for (i in seq_len(nrow(event_pad100))) rect(as.POSIXct(event_pad100$date_start[i]), par("usr")[3], as.POSIXct(event_pad100$date_end[i]), par("usr")[4], col=col2rgba("blue", 0.1), border=NA)
+                    lines(time[inds], clm_pad366$thresh[inds], col="red")
+                    lines(time[inds], clm_pad100$thresh[inds], col="blue")
+                    points(time[inds], clm_pad366$temp[inds], pch=".", col="red", cex=3)
+                    points(time[inds], clm_pad100$temp[inds], pch=".", col="blue", cex=2)
+                    points(time[inds], clm_wout$temp[inds], col="black", cex=1)
+                    legend("top", c("original data", "data & thresh pad 100", "data & thresh pad 366"), col=c("black", "blue", "red"), lty=c(NA, 1, 1), pch=c(1, 15, 15), bty="n", x.intersp=0.2)
+                    dev.off()
+                }
+
                 # if `heatwaveR_opts$climatology` is true, for 30a time series, the complete `event` object is ~41M for 50 locations
                 # --> 41/50*691150 = 566743M = 553G = 0.54T for 691150 sea locations
                 # --> save only the `event$event` object --> only ~1M for 50 locations
@@ -982,8 +1087,8 @@ message("\nfinished. seconds needed to read time series of length ", ntime,
 elapsed_all <- elapsed_all[-1] # remove first elapsed value which is biased way too large
 print(summary(elapsed_all))
 
-# save results to disk
-if (cnt > 0) {
+# save results to d isk
+if (cnt > 0) { # if at least one event was found
     opts_global <- list(dataname=dataname,
                         varname=varname, varname_atts=varname_atts, depth=depth,
                         clim_from=clim_from, clim_to=clim_to,

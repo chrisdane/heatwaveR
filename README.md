@@ -14,6 +14,8 @@
 
 1. run `post_calc_heatwaveR.r` (`post_calc_heatwaveR_loop.r`) with result of steps 1 or 1a
 
+- mean duration of event = yearsum(duration)/yearsum(nevents)
+
 # optional step 2a: save time- and space-indices of all events as lists
 
 1. run `post_calc_heatwaveR.r` (`post_calc_heatwaveR_loop.r`) with arg `calc_selection_inds=T` with result of steps 1 or 1a

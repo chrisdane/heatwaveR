@@ -528,6 +528,8 @@ for (loci in seq_len(nloc)) {
                 durations <- sapply(days_ce, length)
                 #inds <- order(dates_start)
 
+                # todo: return days of individual extreme events for co-coocurence propensity calculation
+
                 cnt_ce <- cnt_ce + 1
                 rows <- data.frame(date_start=dates_start, date_end=dates_end, duration=durations)
                 #if (cnt_ce == 2) stop("asd")

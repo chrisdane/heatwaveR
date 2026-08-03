@@ -24,7 +24,7 @@ if (F) { # sst
         files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
     }
 
-} else if (T) { # tos
+} else if (F) { # tos
     if (T) { # awi-esm-1-1-lr_kh800
         if (F) { # piControl
             dataname <- "awi-esm-1-1-lr_kh800_piControl"
@@ -89,7 +89,18 @@ if (F) { # sst
         }
     }
 
-} else if (F) { # bgc22
+} else if (T) { # bgc06 chl
+    if (T) { # historical3_and_ssp585_2
+        dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
+        if (T) {
+            nchunks <- 160
+            depth <- "0m"
+            pathin <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/bgc06/", dataname, "/nchunks_", nchunks)
+            files <- list.files(pathin, glob2rx(paste0("mcs_calc_bgc06_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")))
+        }
+    }
+
+} else if (F) { # bgc22 oxy
     if (T) { # historical3_and_ssp585_2
         dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
         if (F) {
@@ -133,7 +144,7 @@ if (F) { # sst
 
 } # which var
 
-if (T) { # will be replaced by post_calc_heatwaveR_loop.r
+if (F) { # will be replaced by post_calc_heatwaveR_loop.r
     files <- files[1:2]
 }
 
@@ -162,11 +173,12 @@ calc_ts <- T # only makes sense with all calc result files, i.e. global; needs l
 #vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_max_relThresh")
 vars_ts_wanted <- c("duration", "nevents", "intensity_max")
 if (F) vars_ts_wanted <- "duration"
-if (F) vars_ts_wanted <- "nevents"
+if (T) vars_ts_wanted <- "nevents"
 if (F) vars_ts_wanted <- "intensity_mean"
 if (F) vars_ts_wanted <- "intensity_var"
 if (F) vars_ts_wanted <- "intensity_max"
 if (F) vars_ts_wanted <- "intensity_cumulative"
+if (F) vars_ts_wanted <- "cooccurrence_propensity"
 calc_ts_verbose <- F # log will be ~GB
 calc_event_inds <- F # can run on specific locations, i.e. chunks
 #append_method <- "rbind"
@@ -196,6 +208,7 @@ if (calc_event_inds && append_method == "rbindlist") library(data.table)
 # permanent MHW = duration = 365 days per
 # marin et al. 2021a:
 # TAR = trend attributional ratio; >0: mhw trend due to sst trend; <0: mhw trend due to internal variability
+# mean duration of event = yearsum(duration)/yearsum(nevents)
 
 known_vars <- list(
     # heatwaveR vars:
@@ -247,7 +260,9 @@ known_vars <- list(
     "trend_pyr"=list(units="<varunits> / yr",
                      longname="significant (p lt 0.05) linear <varname> trend per year"),
     "trend_pdec"=list(units="<varunits> / decade",
-                      longname="significant (p lt 0.05) linear <varname> trend per decade")
+                      longname="significant (p lt 0.05) linear <varname> trend per decade"),
+    "cooccurrence_propensity"=list(units="#",
+                      longname="co-occurence propensity (CP); eq. 4 of Wong et al., 2024: https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023AV001059")
                    )
 
 dpm <- c(Jan=31, Feb=28, Mar=31, Apr=30, May=31, Jun=30, Jul=31, Aug=31, Sep=30, Oct=31, Nov=30, Dec=31)
@@ -371,19 +386,25 @@ file_sizes_pretty <- sapply(file_sizes_byte, utils:::format.object_size, "auto")
 file_sizes_total_pretty <- utils:::format.object_size(sum(file_sizes_byte), units="auto")
 width <- options()$width
 options(width=2000)
-message("provided ", nfiles, " files (total ", file_sizes_total_pretty, ") :")
+message("provided ", nfiles, " files (total ", file_sizes_total_pretty, ") in\n", pathin, ":")
 print(files)
 options(width=width) # restore old value
 
 # load data
-message("\nload ", nfiles, " heatwaveR calc results files ...")
+message("\nload ", nfiles, " heatwaveR calc results files from\n", pathin, " ...")
 events_all <- opts_all <- opts_global_all <- lms_all <- vector("list", length=nfiles) # outputs of `calc_heatwaveR.r`
 tic <- Sys.time()
 for (fi in seq_len(nfiles)) {
-    message("load file ", fi, "/", nfiles, " (", file_sizes_pretty[fi], "): ", files$file[fi], " ...")
+    message("load file ", sprintf(paste0("%", nchar(nfiles), "i"), fi), "/", nfiles, ": ", files$file[fi], " (", file_sizes_pretty[fi], ") ...", appendLF=F)
     datnames <- load(paste0(pathin, "/", files$file[fi])) # "events", "opts", "opts_global"; if calc_trend or remove_trend: "lms"
     if (any(is.na(match(c("events", "opts", "opts_global"), datnames)))) {
         stop("this should not happen")
+    }
+    nevents <- sapply(events, nrow)
+    if (any(nevents == 0)) {
+        message("-> warn: there are locations without an event")
+    } else {
+        message("-> at least 1 event per location")
     }
     events_all[[fi]] <- events
     opts_all[[fi]] <- opts
@@ -602,13 +623,13 @@ for (vi in seq_along(known_vars)) {
 
 # reorder so that every entry is one location
 if (!is.null(files$loc_from)) {
-    message("\nreorder objects from ", nfiles, " files so that every entry is one location ...")
+    message("\nreorder objects from ", nfiles, " chunk-files so that every entry is one location ...")
     events <- opts <- list()
     if (exists("lms_all")) lms <- events
     cnt <- 0
     tic <- Sys.time()
     for (fi in seq_len(nfiles)) {
-        msg <- paste0("file ", fi, "/", nfiles, ": `events` (",
+        msg <- paste0("file ", sprintf(paste0("%", nchar(nfiles), "i"), fi), "/", nfiles, ": `events` (",
                       utils:::format.object_size(object.size(events_all[[fi]]), units="auto"), "), `opts` (",
                       utils:::format.object_size(object.size(opts_all[[fi]]), units="auto"), ")")
         if (exists("lms_all")) {
@@ -699,18 +720,20 @@ if (any(inds)) {
     nloc <- length(events) # update
 }
 
+# nevents at all locations
+nevents_tot <- sapply(events, nrow)
+message("\nnevents_tot:")
+print(summary(nevents_tot))
+if (any(nevents_tot == 0)) stop("this should not happen")
+if (any(is.na(nevents_tot))) stop("this should not happen")
+if (length(nevents_tot) != nloc) stop("this should not happen")
+nevents_pyr <- nevents_tot/ts_dt_yrs
+
 ## start post processing
 message("\nstart postprocessing heatwaveR calc results of\n",
         "variable ", varname, " of data ",  dataname, " from\n",
         ts_from, " to ", ts_to, " over clim period from\n", clim_from, " to ", clim_to,
         " at ", nloc, " locations ...")
-
-# nevents at all locations
-nevents_tot <- sapply(events, nrow)
-if (any(nevents_tot == 0)) stop("this should not happen")
-if (any(is.na(nevents_tot))) stop("this should not happen")
-if (length(nevents_tot) != nloc) stop("this should not happen")
-nevents_pyr <- nevents_tot/ts_dt_yrs
 
 # calc timmean
 if (!calc_timmean) {
@@ -875,7 +898,7 @@ if (!calc_ts) {
     if (T) { # todo: so far only monthly output
         time_out_mon <- seq.POSIXt(as.POSIXct(paste0(ts_from_lt$year+1900, "-", ts_from_lt$mon+1, "-15"), tz="UTC"),
                                    as.POSIXct(paste0(ts_to_lt$year+1900, "-", ts_to_lt$mon+1, "-15"), tz="UTC"),
-                                   b="1 mon")
+                                   by="1 mon")
         time_out_mon <- as.POSIXlt(time_out_mon)
         message("`time_out_mon` from ", min(time_out_mon), " to ", max(time_out_mon), ":")
         cat(capture.output(str(time_out_mon)), sep="\n")
@@ -1060,6 +1083,20 @@ if (!calc_ts) {
                             data[inds] <- data[inds] + rhs
                         } # event across more than 1 month or not
                         dataN[inds] <- dataN[inds] + 1 # +1 event
+
+                    } else if (names(vars_ts)[vi] == "cooccurrence_propensity") { # of compound events
+                        # Wong et al., 2024: https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023AV001059
+                        # csx: column-single extreme event
+                        # ccx: column-compound extreme event
+                        # eq 3: n_r(year) = n_1(year)/d_y(year) * n_2(year)/d_y(year) * d_y(year)
+                        # with: n_{1,2}: number of days per year of different csx (single)
+                        #       d_y: 365 the number of days per year
+                        # eq 4: if n_r(year) == 0:       cp(year) = 0
+                        #       if n(year) >= n_r(year): cp(year) = (n(year) - n_r(year)) / (n_max(year) - n_r(year))
+                        #       if n(year)  < n_r(year): cp(year) = (n(year) - n_r(year)) / n_r(year)
+                        # with: n(year) = number of days per year of ccx (compound)
+                        #       n_max(year) = spatial max of n(year)
+                        stop("asd")
 
                     } else { # default
                         # add values over events and divide through number of events if
