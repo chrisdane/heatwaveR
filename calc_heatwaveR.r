@@ -65,7 +65,7 @@ heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); defaul
                        #clim_runmean=15,
                        MCScorrect=F,     # for heatwaveR::detect_event(); default: F; passed to heatwaveR::category(): do not let seawater temp threshold go below -1.8°C
                        calc_trend=T,     # save trend of original data
-                       remove_trend=F,   # remove trend of original data before extreme event detection
+                       remove_trend=T,   # remove trend of original data before extreme event detection
                        climatology=F,    # for heatwaveR::detect_event(); default: F; passed to hewatwaveR::category(): returns more details
                        var=T,            # for heatwaveR::detect_event(); default: F; calc var in addition; if true, will run heatwaveR:::clim_calc and not clim_calc_cpp
                        roundClm=F        # for heatwaveR::ts2clm(); default: 4; round clim and thres values; !!! this actually depends on the variable; keep F !!!
@@ -182,7 +182,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     clim_from <- ts_from
     clim_to <- ts_to
     if (T) { # time,lat,lon; sst:_ChunkSizes = 366, 1, 1440
-        pathin <- paste0("/work/ab1095/a270317/data/copernicus/OCEANCOLOUR_GLO_BGC_L4_MY_009_104/cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D_202603/rechunked")
+        pathin <- "/work/ab1095/a270317/data/copernicus/OCEANCOLOUR_GLO_BGC_L4_MY_009_104/cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D_202603/rechunked"
         files <- list.files(pathin, pattern=glob2rx("????.nc"), full.names=T)
     }
     files_from <- substr(basename(files), 1, 4) # ????.nc
@@ -195,10 +195,10 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     #location_inds <- 14:20
     #location_inds <- 1:50
     #location_inds <- 181067:181100
-    location_inds <- read.table(paste0("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt"), header=T, quote="") # only seapoints
+    location_inds <- read.table("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt", header=T, quote="") # only seapoints
     location_inds <- location_inds$ind
     if (T) {
-        location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
+        #location_inds <- location_inds[70:90] # this line will be replaced by calc_heatwaveR_loop.r
     }
 
 } else if (F) { # awi-esm-1-1-lr_kh800
@@ -782,23 +782,22 @@ for (loci in seq_len(nloc)) {
             message("`heatwaveR_opts$calc_trend`=", ifelse(heatwaveR_opts$calc_trend, "T", "F"),
                     " (`heatwaveR_opts$remove_trend`=", ifelse(heatwaveR_opts$remove_trend, "T", "F"),
                     ") --> run stats::lm ... ", appendLF=F)
-            if (ntime <= 3) {
-                message("ts length ", ntime, " <= 3 too short for lm. skip")
+
+            okinds <- which(!is.na(data))
+            if (length(okinds) <= 3) {
+                message("data has <= 3 non-NA data values --> too short for lm. skip location")
                 lm <- NA
             } else {
-                timen <- as.numeric(time) # always seconds
-                lm <- stats::lm(data ~ timen)
+                timen <- as.numeric(time[okinds]) # time in seconds --> regression slope will have units per second
+                datap <- data[okinds]
+                lm <- stats::lm(datap ~ timen)
                 lm_summary <- summary(lm)
-                if (!is.na(lm_summary$coefficients[2,4])) { # if lm was successfull
-                    if (F) { # this is wrong as it assumes that there are no missing data in time series
-                        lm_slope_pyr <- unname((lm$fitted.values[ntime] - lm$fitted.values[1])/ts_dt_yrs)
-                    } else if (T) {
-                        #lm_n <- length(lm$fitted.values)
-                        #lm_dt_sec <- lm$model[["timen"]][lm_n] - lm$model[["timen"]][1]
-                        #lm_slope_pyr <- unname(lm$fitted.values[lm_n] - lm$fitted.values[1])/lm_dt_sec*365.25*86400
-                        lm_slope_pyr <- unname(lm$coefficients[2])*365.25*86400 # slope is s-1
-                        # --> both `lm_slope_pyr` are equal
-                    }
+                if (!is.na(lm$coefficients[2])) { # if lm was successfull
+                    #lm_n <- length(lm$fitted.values)
+                    #lm_dt_sec <- lm$model[["timen"]][lm_n] - lm$model[["timen"]][1]
+                    #lm_slope_pyr <- unname(lm$fitted.values[lm_n] - lm$fitted.values[1])/lm_dt_sec*365.25*86400
+                    lm_slope_pyr <- unname(lm$coefficients[2])*365.25*86400 # slope in s-1
+                    # --> both `lm_slope_pyr` are equal
                     attr(lm_slope_pyr, "units") <- varname_atts$units
                     lm_label <- paste0("r=", round(sqrt(lm_summary$r.squared), 2), ", p")
                     lm_pval <- lm_summary$coefficients[2,4]
@@ -817,16 +816,18 @@ for (loci in seq_len(nloc)) {
                                r=sqrt(lm_summary$r.squared),
                                df=unname(lm_summary$fstatistic["dendf"]),
                                p=lm_pval,
-                               label=lm_label) # 5.6 Kb per location
+                               label=lm_label
+                               #, okinds=okinds
+                               )
                 } else { # if lm was not successfull
+                    message("linear trend calculation was not successfull. skip location")
                     lm <- NA
                 }
-            } # if ntime > 3
+            } # if more than > 3 non-NA data points
         } # if heatwaveR_opts$calc_trend || heatwaveR_opts$remove_trend
 
         # remove linear trend of time series before heatwaveR calculations
         if (heatwaveR_opts$remove_trend && all(is.na(lm))) {
-            message("`heatwaveR_opts$remove_trend` is true but linear trend calculation was not successfull. skip location")
             # skip to next location
 
         } else { # calc extreme events
@@ -834,7 +835,13 @@ for (loci in seq_len(nloc)) {
             # detrend time series from `ts_from` to `ts_to`
             if (heatwaveR_opts$remove_trend) {
                 message("`heatwaveR_opts$remove_trend` is true --> remove linear temporal trend from original time series ...")
-                data <- data - lm_fit
+                if (F) { # remove all NA data -> changes length of time series
+                         # --> time information does not match heatwaveR settings like `climatologyPeriod`
+                    time <- time[okinds]
+                    data <- data[okinds] - lm_fit
+                } else if (T) { # keep NA data -> does not change length of time series
+                    data[okinds] <- data[okinds] - lm_fit
+                }
                 rm(lm_fit)
             }
 
@@ -986,75 +993,77 @@ for (loci in seq_len(nloc)) {
             }
 
             # detect extreme events
-            if (all(is.na(clm$thresh))) {
-                event <- NA
-            } else {
+            # calls in `detect_event`:
+            # 1) heatwaveR::detect_event():
+            # t_series <- data.frame(ts_x, ts_y, ts_seas, ts_thresh)
+            # t_series$threshCriterion <- t_series$ts_y > t_series$ts_thresh
+            # t_series$threshCriterion[is.na(t_series$threshCriterion)] <- FALSE
+            # --> `ts_thresh` = thresh[doy i] = quantile(data[doy i, all years], quant=90/100)
+            # 2)
+            # events_clim <- proto_event(t_series, criterion_column = t_series$threshCriterion,
+            #     minDuration = minDuration, joinAcrossGaps = joinAcrossGaps,
+            #     maxGap = maxGap)
+            # 3)
+            # events <- data.frame(events_clim, row_index = base::seq_len(nrow(events_clim)),
+            #     mhw_rel_seas = events_clim$ts_y - events_clim$ts_seas,
+            #     mhw_rel_thresh = events_clim$ts_y - events_clim$ts_thresh)
+            # events <- events[stats::complete.cases(events$event_no), ]
+            # events <- plyr::ddply(events, c("event_no"), .fun = plyr::summarise,
+            #     index_start = min(row_index),
+            #     index_peak = row_index[mhw_rel_seas == max(mhw_rel_seas)][1], index_end = max(row_index),
+            #     duration = index_end - index_start + 1, date_start = min(ts_x),
+            #     date_peak = ts_x[mhw_rel_seas == max(mhw_rel_seas)][1],
+            #     date_end = max(ts_x), intensity_mean = mean(mhw_rel_seas),
+            #     intensity_max = max(mhw_rel_seas), intensity_var = sqrt(stats::var(mhw_rel_seas)),
+            #     intensity_cumulative = sum(mhw_rel_seas), intensity_mean_relThresh = mean(mhw_rel_thresh),
+            #     intensity_max_relThresh = max(mhw_rel_thresh),
+            #     intensity_var_relThresh = sqrt(stats::var(mhw_rel_thresh)),
+            #     intensity_cumulative_relThresh = sum(mhw_rel_thresh),
+            #     intensity_mean_abs = mean(ts_y), intensity_max_abs = max(ts_y),
+            #     intensity_var_abs = sqrt(stats::var(ts_y)), intensity_cumulative_abs = sum(ts_y))
 
-                # calls in `detect_event`:
-                # 1) heatwaveR::detect_event():
-                # t_series <- data.frame(ts_x, ts_y, ts_seas, ts_thresh)
-                # t_series$threshCriterion <- t_series$ts_y > t_series$ts_thresh
-                # t_series$threshCriterion[is.na(t_series$threshCriterion)] <- FALSE
-                # --> `ts_thresh` = thresh[doy i] = quantile(data[doy i, all years], quant=90/100)
-                # 2)
-                # events_clim <- proto_event(t_series, criterion_column = t_series$threshCriterion,
-                #     minDuration = minDuration, joinAcrossGaps = joinAcrossGaps,
-                #     maxGap = maxGap)
-                # 3)
-                # events <- data.frame(events_clim, row_index = base::seq_len(nrow(events_clim)),
-                #     mhw_rel_seas = events_clim$ts_y - events_clim$ts_seas,
-                #     mhw_rel_thresh = events_clim$ts_y - events_clim$ts_thresh)
-                # events <- events[stats::complete.cases(events$event_no), ]
-                # events <- plyr::ddply(events, c("event_no"), .fun = plyr::summarise,
-                #     index_start = min(row_index),
-                #     index_peak = row_index[mhw_rel_seas == max(mhw_rel_seas)][1], index_end = max(row_index),
-                #     duration = index_end - index_start + 1, date_start = min(ts_x),
-                #     date_peak = ts_x[mhw_rel_seas == max(mhw_rel_seas)][1],
-                #     date_end = max(ts_x), intensity_mean = mean(mhw_rel_seas),
-                #     intensity_max = max(mhw_rel_seas), intensity_var = sqrt(stats::var(mhw_rel_seas)),
-                #     intensity_cumulative = sum(mhw_rel_seas), intensity_mean_relThresh = mean(mhw_rel_thresh),
-                #     intensity_max_relThresh = max(mhw_rel_thresh),
-                #     intensity_var_relThresh = sqrt(stats::var(mhw_rel_thresh)),
-                #     intensity_cumulative_relThresh = sum(mhw_rel_thresh),
-                #     intensity_mean_abs = mean(ts_y), intensity_max_abs = max(ts_y),
-                #     intensity_var_abs = sqrt(stats::var(ts_y)), intensity_cumulative_abs = sum(ts_y))
+            # new heatwave3 package:
+            # 1) heatwave3::detect3():
+            # nc_event <- terra::app(x = nc_seas, fun = detect3event,
+            #             time_dim = terra::time(nc_rast_daily),
+            #             min_dur = min_dur, max_gap = max_gap, ...)
+            # 2) heatwave3::detect3event():
+            # df_event <- heatwaveR::detect_event3(df_sub, minDuration = min_dur, maxGap = max_gap, ...)$event
+            # --> uses heatwaveR::detect_event3
 
-                # new heatwave3 package:
-                # 1) heatwave3::detect3():
-                # nc_event <- terra::app(x = nc_seas, fun = detect3event,
-                #             time_dim = terra::time(nc_rast_daily),
-                #             min_dur = min_dur, max_gap = max_gap, ...)
-                # 2) heatwave3::detect3event():
-                # df_event <- heatwaveR::detect_event3(df_sub, minDuration = min_dur, maxGap = max_gap, ...)$event
-                # --> uses heatwaveR::detect_event3
+            message("run heatwaveR::detect_event with `categories=T` ...")
+            event <- suppressWarnings( # suppress partial match warnings within `heatwaveR::detect_event` and `heatwaveR::cateory`
+                         heatwaveR::detect_event(clm,
+                                                 minDuration=heatwaveR_opts$minDuration,
+                                                 coldSpells=heatwaveR_opts$coldSpells,
+                                                 categories=T,
+                                                 S=T, # for category(): southern hemisphere? can be ignored: just determines `season`; keep default T
+                                                 climatology=heatwaveR_opts$climatology, # for category(): if true, returns more detailed information
+                                                 MCScorrect=heatwaveR_opts$MCScorrect # for category(): limit MCS temperature threshold to -1.8°C
+                                                ) # ~850K for ~11k ntime
+                    )
 
-                message("run heatwaveR::detect_event with `categories=T` ...")
-                event <- suppressWarnings( # suppress partial match warnings within `heatwaveR::detect_event` and `heatwaveR::cateory`
-                             heatwaveR::detect_event(clm,
-                                                     minDuration=heatwaveR_opts$minDuration,
-                                                     coldSpells=heatwaveR_opts$coldSpells,
-                                                     categories=T,
-                                                     S=T, # for category(): southern hemisphere? can be ignored: just determines `season`; keep default T
-                                                     climatology=heatwaveR_opts$climatology, # for category(): if true, returns more detailed information
-                                                     MCScorrect=heatwaveR_opts$MCScorrect # for category(): limit MCS temperature threshold to -1.8°C
-                                                    ) # ~850K for ~11k ntime
-                        )
+            if (F) {
+                inds=which(time_posixlt$year+1900L >= 2000 & time_posixlt$year+1900L <= 2004)
+                png("threshold_padding.png", width=2666, height=1500, res=300, family="Droid Sans")
+                plot(time[inds], data$temp[inds], type="n", yaxt="n")
+                axis(2, at=pretty(data$temp[inds]), las=2)
+                for (i in seq_len(nrow(event_pad366))) rect(as.POSIXct(event_pad366$date_start[i]), par("usr")[3], as.POSIXct(event_pad366$date_end[i]), par("usr")[4], col=col2rgba("red", 0.1), border=NA)
+                for (i in seq_len(nrow(event_pad100))) rect(as.POSIXct(event_pad100$date_start[i]), par("usr")[3], as.POSIXct(event_pad100$date_end[i]), par("usr")[4], col=col2rgba("blue", 0.1), border=NA)
+                lines(time[inds], clm_pad366$thresh[inds], col="red")
+                lines(time[inds], clm_pad100$thresh[inds], col="blue")
+                points(time[inds], clm_pad366$temp[inds], pch=".", col="red", cex=3)
+                points(time[inds], clm_pad100$temp[inds], pch=".", col="blue", cex=2)
+                points(time[inds], clm_wout$temp[inds], col="black", cex=1)
+                legend("top", c("original data", "data & thresh pad 100", "data & thresh pad 366"), col=c("black", "blue", "red"), lty=c(NA, 1, 1), pch=c(1, 15, 15), bty="n", x.intersp=0.2)
+                dev.off()
+            }
 
-                if (F) {
-                    inds=which(time_posixlt$year+1900L >= 2000 & time_posixlt$year+1900L <= 2004)
-                    png("threshold_padding.png", width=2666, height=1500, res=300, family="Droid Sans")
-                    plot(time[inds], data$temp[inds], type="n", yaxt="n")
-                    axis(2, at=pretty(data$temp[inds]), las=2)
-                    for (i in seq_len(nrow(event_pad366))) rect(as.POSIXct(event_pad366$date_start[i]), par("usr")[3], as.POSIXct(event_pad366$date_end[i]), par("usr")[4], col=col2rgba("red", 0.1), border=NA)
-                    for (i in seq_len(nrow(event_pad100))) rect(as.POSIXct(event_pad100$date_start[i]), par("usr")[3], as.POSIXct(event_pad100$date_end[i]), par("usr")[4], col=col2rgba("blue", 0.1), border=NA)
-                    lines(time[inds], clm_pad366$thresh[inds], col="red")
-                    lines(time[inds], clm_pad100$thresh[inds], col="blue")
-                    points(time[inds], clm_pad366$temp[inds], pch=".", col="red", cex=3)
-                    points(time[inds], clm_pad100$temp[inds], pch=".", col="blue", cex=2)
-                    points(time[inds], clm_wout$temp[inds], col="black", cex=1)
-                    legend("top", c("original data", "data & thresh pad 100", "data & thresh pad 366"), col=c("black", "blue", "red"), lty=c(NA, 1, 1), pch=c(1, 15, 15), bty="n", x.intersp=0.2)
-                    dev.off()
-                }
+            if (nrow(event) == 1 && is.na(event$event_no)) { # not a single event was detected
+                # --> this can happen if there are many NA in the climatology and/or time series
+                message("--> not a single event was detected")
+
+            } else { # at least one event was detected
 
                 # if `heatwaveR_opts$climatology` is true, for 30a time series, the complete `event` object is ~41M for 50 locations
                 # --> 41/50*691150 = 566743M = 553G = 0.54T for 691150 sea locations
@@ -1068,17 +1077,17 @@ for (loci in seq_len(nloc)) {
                 # season can be inferred later in post_heatwaveR.r
                 event$season <- NULL
 
+                # quick plot
                 #heatwaveR::event_line(event)
 
-            } # some non-NA?
+                # save results
+                cnt <- cnt + 1
+                events[[cnt]] <- event
+                opts[[cnt]] <- list(loci=location_inds[loci],
+                                    locinds=locinds, locvals=locvals)
+                if (heatwaveR_opts$calc_trend || heatwaveR_opts$remove_trend) lms[[cnt]] <- lm
 
-            # save results
-            cnt <- cnt + 1
-            events[[cnt]] <- event
-            opts[[cnt]] <- list(loci=location_inds[loci],
-                                locinds=locinds, locvals=locvals)
-            if (heatwaveR_opts$calc_trend || heatwaveR_opts$remove_trend) lms[[cnt]] <- lm
-
+            } # at least one event was detected
         } # if remove_trend and lm not successful
     } # if there are any non-NA at current location
 } # for loci
