@@ -9,19 +9,21 @@ if (!interactive()) {
 }
 
 #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR")
-pathout <- paste0("/work/ab1095/a270073/post/heatwaveR")
+pathout <- paste0("/work/ab1095/a270317/post/heatwaveR")
 subset_from <- subset_to <- NULL
 
 # which variable
 depth <- NULL # default
-if (F) { # sst
+if (T) { # sst
     if (T) { # oisst
         dataname <- "oisst_v2.1"
-        nchunks <- 30
-        pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/sst/", dataname, "/nchunks_", nchunks)
+        nchunks <- 82
+        pathin <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/sst/", dataname, "/nchunks_", nchunks)
         #files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20141231_clim_19820101-20141231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
-        #files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
-        files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
+        #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
+        #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
+	files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
+        #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
     }
 
 } else if (F) { # tos
@@ -89,7 +91,7 @@ if (F) { # sst
         }
     }
 
-} else if (T) { # bgc06 chl
+} else if (F) { # bgc06 chl
     if (T) { # historical3_and_ssp585_2
         dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
         if (T) {
@@ -111,13 +113,13 @@ if (F) { # sst
             files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")))
         } else if (T) {
             nchunks <- 160
-            #depth <- "0m"
-            depth <- "200m"
-            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks)
-            #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")))
-            #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")))
-            #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")))
-            files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_31a_withTrend*.RData")))
+            depth <- "0m"
+            #depth <- "200m"
+            pathin <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/bgc06/", dataname, "/nchunks_", nchunks)
+            #files <- list.files(pathin, glob2rx(paste0("mhw_calc_bgc06_", depth, "_ts_19820101-21001231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")))
+            #files <- list.files(pathin, glob2rx(paste0("mhw_calc_bgc06_", depth, "_ts_19820101-21001231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")))
+            files <- list.files(pathin, glob2rx(paste0("mhw_calc_bgc06_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData")))
+            #files <- list.files(pathin, glob2rx(paste0("mcs_calc_bgc06_", depth, "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")))
         }
         #subset_to <- as.POSIXct("2014-12-31 23:59:59", tz="UTC")
     }

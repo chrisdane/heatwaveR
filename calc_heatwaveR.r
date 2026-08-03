@@ -109,7 +109,8 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     #ts_to <- as.POSIXct("2014-12-31 23:59:59", tz="UTC")
     ts_to <- as.POSIXct("2021-12-31 23:59:59", tz="UTC")
     clim_from <- ts_from
-    clim_to <- ts_to
+    clim_to <- ts_to #as.POSIXct("2011-12-31 23:59:59", tz="UTC")
+
     if (F) { # time,lat,lon; sst:_ChunkSizes = 1, 720, 1440; 3-4 min
         pathin <- "/work/ba1103/a270073/data/oisst/data/v2/daily"
         files <- list.files(pathin, pattern=glob2rx("sst.day.mean.????.v2.nc"), full.names=T)
@@ -130,7 +131,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     files_to <- files_from
     files_from <- paste0(files_from, "-01-01") # per
     files_to <- paste0(files_to, "-12-31")     # file
-    pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_30")
+    pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
     #location_inds <- 181067
     #location_inds <- 14:20
     #location_inds <- 1:50
@@ -138,36 +139,6 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     location_inds <- read.table(paste0("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt"), header=T, quote="") # only seapoints
     location_inds <- location_inds$ind
     if (T) {
-        location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
-    }
-
-} else if (F) { # occci data
-    dataname <- "occci"
-    varname <- "chlor_a"
-    heatwaveR_opts$pctile <- 90
-    timedimname <- "time"
-    spatialdimnames <- c("lon", "lat") # order does not matter
-    #ts_from <- 1997 # incomplete year
-    ts_from <- as.POSIXct("1998-1-1", tz="UTC") # first complete year
-    ts_to <- as.POSIXct("2025-12-31 23:59:59", tz="UTC")
-    clim_from <- ts_from
-    clim_to <- ts_to
-    if (T) { # time,lat,lon; sst:_ChunkSizes = 366, 1, 1440
-        pathin <- "/work/ab1095/a270317/data/rechunked"
-        files <- list.files(pathin, pattern=glob2rx("ESACCI-OC-L3S-CHLOR_A-MERGED-1D_ANNUAL_4km_GEO_PML_OCx-????-fv6.0.nc"), full.names=T) # problem: many spatio-temporal gaps
-    }
-    files_from <- substr(basename(files), 56, 59) # ESACCI-OC-L3S-CHLOR_A-MERGED-1D_ANNUAL_4km_GEO_PML_OCx-????-fv6.0.nc
-    files_to <- files_from
-    files_from <- paste0(files_from, "-01-01") # per
-    files_to <- paste0(files_to, "-12-31")     # file
-    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
-    #location_inds <- 181067
-    #location_inds <- 14:20
-    #location_inds <- 1:50
-    #location_inds <- 181067:181100
-    location_inds <- read.table("/work/ba1103/a270073/data/oisst/data/sea_inds_lsmask.oisst.v2.txt", header=T, quote="") # only seapoints
-    location_inds <- location_inds$ind
-    if (F) {
         location_inds <- location_inds[14:20] # this line will be replaced by calc_heatwaveR_loop.r
     }
 
@@ -189,8 +160,7 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     files_to <- files_from
     files_from <- paste0(files_from, "-01-01") # per
     files_to <- paste0(files_to, "-12-31")     # file
-    #pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
-    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
+    pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
     #location_inds <- 181067
     #location_inds <- 14:20
     #location_inds <- 1:50
@@ -311,8 +281,8 @@ if (F) { # oisst daily from downloads.psl.noaa.gov: combination of v2 and v2.1
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_40")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_82")
     #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
-    pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
-    #pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
+    #pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
+    pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/", varname, "/", dataname, "/nchunks_160")
     if (T) {
         location_inds <- 14:20 # 92813 # 14:20 # this line will be replaced by calc_heatwaveR_loop.r
     }
@@ -561,6 +531,7 @@ for (fi in seq_along(files$file)) {
                       "    and rerun this script with $fout.")
         stop(msg)
     } # is msg is not null
+    #stop("asd")
 
     # get time of current file
     timeunit <- ncs[[fi]]$dim[[timedimname]]$units
@@ -615,7 +586,11 @@ cat(capture.output(str(time, vec.len=20)), sep="\n")
 dt_day <- as.numeric(difftime(time[2:ntime], time[1:(ntime-1)], units="day"))
 if (!all(unique(dt_day) == 1)) { # todo: allow non-daily data?
     #stop("dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
+<<<<<<< Updated upstream
     message("warn: dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
+=======
+    message("dt of input time is ", paste(unique(dt_day), collapse=", "), " day(s) != 1 day")
+>>>>>>> Stashed changes
 }
 rm(dt_day)
 

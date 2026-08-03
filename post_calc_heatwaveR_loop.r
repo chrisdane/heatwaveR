@@ -4,7 +4,7 @@ rm(list=ls()); graphics.off()
 
 submit_via_nohup <- F
 submit_via_sbatch <- T # uses account resources
-dry <- T # do not submit jobs
+dry <- F # do not submit jobs
 
 myrunscript_fname <- "~/scripts/r/heatwaveR/post_calc_heatwaveR.r"
 
@@ -13,7 +13,11 @@ myrunscript_fname <- "~/scripts/r/heatwaveR/post_calc_heatwaveR.r"
 #start <- 1; end <- 30
 #start <- 1; end <- 40
 
-#start <- 1; end <- 82
+start <- 1; end <- 82
+#prefix <- "oisst_woutTrend_fixed_baseline_intensity_duration_nevents"
+prefix <- "oisst_withTrend_fixed_baseline_intensity_duration_nevents"
+#prefix <- "oisst_woutTrend_fixed_baseline_clim_to_2011_intensity_duration_nevents"
+#prefix <- "oisst_withTrend_fixed_baseline_clim_to_2011_intensity_duration_nevents"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_duration"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_nevents"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_intensity_mean"
@@ -41,7 +45,7 @@ myrunscript_fname <- "~/scripts/r/heatwaveR/post_calc_heatwaveR.r"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_duration"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_nevents"
 
-start <- 1; end <- 160
+#start <- 1; end <- 160
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_runmean_15_duration"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_runmean_15_nevents"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_withTrend_runmean_15_intensity_mean"
@@ -119,9 +123,9 @@ start <- 1; end <- 160
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_31_nevents"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_duration"
 #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_nevents"
-prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_ce_tos_bgc22_0_withTrend_runmean_15_intensity_duration_nevents"
+#prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc06_0_pctile_90_withTrend_runmean_15_intensity_duration_nevents"
 
-replace_string <- list(string="    files <- files[", between_lines=c(136, 138))
+replace_string <- list(string="    files <- files[", between_lines=c(138, 140))
 njobs_wanted <- end # = nchunks
 njobs_wanted <- 1 # njobs=1 for all files for `calc_timmean` and `calc_ts`
 
@@ -212,7 +216,7 @@ for (jobi in seq_len(njobs)) {
         # ollie partition limits: https://swrepo1.awi.de/plugins/mediawiki/wiki/hpc/index.php/SLURM#Partitions
         cmd <- c("#!/bin/bash",
                  paste0("#SBATCH --job-name=", tools::file_path_sans_ext(basename(slurmrunscript_fname)), "      # Specify job name"),
-                 "#SBATCH --partition=shared     # Specify partition name",
+                 "#SBATCH --partition=compute     # Specify partition name",
                  #"#SBATCH --partition=prepost     # Specify partition name",
                  #"#SBATCH --ntasks=1             # Specify max. number of tasks to be invoked",
                  #"#SBATCH --time=04:00:00        # Set a limit on the total run time",
@@ -225,10 +229,10 @@ for (jobi in seq_len(njobs)) {
                  "#SBATCH --account=ab1095       # Charge resources on this project account",
                  #"#SBATCH --account=ba1103       # Charge resources on this project account",
                  # memory:
-                 #"#SBATCH --mem=0                    # 0 = use all mem",
+                 "#SBATCH --mem=0                    # 0 = use all mem",
                  #"#SBATCH --mem=20G                    # 0 = use all mem",
                  #"#SBATCH --mem=30G                    # 0 = use all mem",  # for `calc_ts`
-                 "#SBATCH --mem=40G                    # 0 = use all mem",  # for `calc_ts`
+                 #"#SBATCH --mem=40G                    # 0 = use all mem",  # for `calc_ts`
                  # logs and errors in different files:
                  #paste0("#SBATCH --output=", tools::file_path_sans_ext(myrunscripttmp_fname), "_o%j.log    # File name for standard output"),
                  #paste0("#SBATCH --error=", tools::file_path_sans_ext(myrunscripttmp_fname), "_e%j.log     # File name for standard error output"),

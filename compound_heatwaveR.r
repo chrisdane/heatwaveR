@@ -17,36 +17,36 @@ library(tibble) # to mimic heatwaveR::detect_event()
 verbose <- F
 #options(warn=2)
 
-if (T) { # mhw + lox compounds; ce_tos_bgc2
+if (T) { # mhw + lchl compounds; ce_tos_bgc06
     if (T) { # awi-esm-1-1-lr_kh800
-        varnames <- c("tos", "bgc22")
+        varnames <- c("tos", "bgc06")
         if (T) { # historical3_and_ssp585_2
             dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
-            if (F) { # surface; fixed baseline with trend
+            if (T) { # surface; fixed baseline with trend
                 depths <- c(NA, "0m")
-                nchunks <- c(82, 82)
+                nchunks <- c(82, 160)
                 files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_withTrend*.RData")),
+                              list.files(path=paste0("/work/ab1095/a270317/post/heatwaveR/calc/bgc06/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0("mhw_calc_bgc06_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
-                                        "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
+                                        "_mhw_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_90",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_withTrend")
             } else if (F) { # surface; fixed baseline wout trend
                 depths <- c(NA, "0m")
-                nchunks <- c(82, 82)
+                nchunks <- c(82, 160)
                 files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_10_minDuration_5_fixed_baseline_woutTrend*.RData")),
+                              list.files(path=paste0("/work/ab1095/a270317/post/heatwaveR/calc/bgc06/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0("mhw_calc_bgc06_", depths[2], "_ts_19820101-21001231_clim_19820101-20111231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
-                                        "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
+                                        "_mhw_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_90",
                                         "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_woutTrend")
             } else if (F) { # surface; 31-yr running mean
                 depths <- c(NA, "0m")
@@ -67,14 +67,14 @@ if (T) { # mhw + lox compounds; ce_tos_bgc2
                 files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
                                          pattern=glob2rx(paste0(dataname, "_calc_mhw_tos_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData")),
                                          full.names=T),
-                              list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/bgc22/", dataname, "/nchunks_", nchunks[2]),
-                                         pattern=glob2rx(paste0(dataname, "_calc_mcs_bgc22_", depths[2], "_ts_19820101-21001231_clim_19820101-21001231_pctile_10_minDuration_5_runmean_15a_withTrend*.RData")),
+                              list.files(path=paste0("/work/ab1095/a270317/post/heatwaveR/calc/bgc06/", dataname, "/nchunks_", nchunks[2]),
+                                         pattern=glob2rx(paste0("mhw_calc_bgc06_", depths[2], "_ts_19820101-21001231_clim_19820101-21001231_pctile_90_minDuration_5_runmean_15a_withTrend*.RData")),
                                          full.names=T))
                 setting_label <- paste0(dataname, "_calc_ce",
                                         "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
-                                        "_mcs_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_10",
-                                        "_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_15a_withTrend")
-            } else if (T) { # test different chunks per variable
+                                        "_mhw_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_90",
+                                        "_ts_19820101-21001231_clim_19820101-21001231_minDuration_5_runmean_15a_withTrend")
+            } else if (F) { # test different chunks per variable
                 depths <- c(NA, "0m")
                 nchunks <- c(82, 160)
                 files <- list(list.files(path=paste0("/work/ba1103/a270073/post/heatwaveR/calc/tos/", dataname, "/nchunks_", nchunks[1]),
@@ -94,7 +94,7 @@ if (T) { # mhw + lox compounds; ce_tos_bgc2
 
 #nchunks_out <- max(nchunks) # old; better use more chunks = smaller files
 #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160") # same nchunks as njobs_wanted in compound_heatwaveR_loop
-pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160")
+pathout <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160")
 
 if (F) { # old: does not take into account different nchunks per variable
     files <- lapply(files, "[", 28) # will be replaced by compound_heatwaveR_loop.r

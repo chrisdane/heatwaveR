@@ -8,12 +8,11 @@ dry <- F # do not submit jobs
 
 myrunscript_fname <- "~/scripts/r/heatwaveR/compound_heatwaveR.r"
 
-<<<<<<< Updated upstream
 if (T) { # fesom
-    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_with"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_wout"
+    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc06_0m_fixed_withTrend_pctile_90_90_clim_to_2011"   #_clim_to_2011
+    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc06_0m_fixed_woutTrend_pctile_90_90_clim_to_2011"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_31yr_with"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_15yr_with"
+    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc06_0m_15yr_withTrend_pctile_90_90"
     if (F) { # old: does not take into account different chunks per variable
         start <- 1; end <- 82 # nchunks of calc_heatwaveR.r # old
         #start <- 1; end <- 160
@@ -24,23 +23,9 @@ if (T) { # fesom
     } else if (T) { # new
         start <- 1; end <- 126859 # nloc
         njobs_wanted <- 160 # can be same as `njobs_wanted` from calc_heatwaveR_loop but not necessary
-        replace_string <- list(string="    location_inds <- ", between_lines=c(103, 105))
+        replace_string <- list(string="    location_inds <- ", between_lines=c(102, 104))
     }
 } # which data
-=======
-if (T) {
-    start <- 1; end <- 82 # nchunks of calc_heatwaveR.r
-    #start <- 1; end <- 160
-    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc06_0m_fixed_withTrend_clim_to_2011"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_wout"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_31yr_with"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_15yr_with"
-    replace_string <- list(string="    files <- lapply(files, \"[\", ", between_lines=c(86, 88))
-    #njobs_wanted <- 10
-    njobs_wanted <- 40      #WE CAN PUT TO THE END ????
-    #njobs_wanted <- end
-}
->>>>>>> Stashed changes
 
 if (!exists("replace_by")) {
     ntot <- end - start + 1
@@ -138,10 +123,10 @@ for (jobi in seq_len(njobs)) {
                  "#SBATCH --time=08:00:00        # Set a limit on the total run time",
                  #"#SBATCH --time=14:00:00        # Set a limit on the total run time",
                  #"#SBATCH --mail-type=FAIL       # Notify user by email in case of job failure",
-                 #"#SBATCH --account=ab1095       # Charge resources on this project account",
+                 "#SBATCH --account=ab1095       # Charge resources on this project account",
                  #"#SBATCH --account=ab0246       # Charge resources on this project account",
                  #"#SBATCH --account=ba0989       # Charge resources on this project account",
-                 "#SBATCH --account=ba1103       # Charge resources on this project account",
+                 #SBATCH --account=ba1103       # Charge resources on this project account",
                  # memory:
                  #"#SBATCH --mem=0                    # 0 = use all mem",
                  #"#SBATCH --mem=15000M                    # 0 = use all mem",

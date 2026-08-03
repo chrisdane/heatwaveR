@@ -10,14 +10,23 @@ myrunscript_fname <- "~/scripts/r/heatwaveR/calc_heatwaveR.r"
 
 if (F) { # oisst
     #prefix <- "oisst_runmean15"
-    prefix <- "oisst_runmean31"
-    replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(104, 106))
+    prefix <- "oisst_fixed_baseline_withTrend"
+    replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(141, 143))
     #start <- 1; end <- 1036800 # ntot= nlon*nlat
     start <- 1; end <- 691150 # sea locations only
     #start <- 34558; end <- 69115
     #njobs_wanted <- 30
     njobs_wanted <- 82
-} else if (T) { # fesom
+} else if (T) { #cmens
+    #prefix <- "cmens_runmean15"
+    prefix <- "cmens_pctile_90_fixed_baseline_woutTrend"
+    replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(172, 174))
+    #start <- 1; end <- 1036800 # ntot= nlon*nlat
+    start <- 1; end <- 691150 # sea locations only
+    #start <- 34558; end <- 69115
+    #njobs_wanted <- 30
+    njobs_wanted <- 82
+} else if (F) { # fesom
     #prefix <- "awi-esm-1-1-lr_kh800_piControl"
     #prefix <- "awi-esm-1-1-lr_kh800_historical2"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_with"
@@ -36,7 +45,7 @@ if (F) { # oisst
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_wout"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_runmean_31"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc22_200m_runmean_15"
-    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc06_0m_fixed"
+    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_bgc06_0m_pctile_90_runmean_15a_withTrend"
     replace_string <- list(string="    location_inds <- ", between_lines=c(256, 258)) #(248, 250)
 
     start <- 1; end <- 126859
@@ -60,7 +69,7 @@ if (!exists("replace_by")) {
     replace_by[,2] <- c(replace_by[2:njobs_wanted,2]-1, end)
     df <- cbind(from=replace_by[,1], to=replace_by[,2], len=replace_by[,2]-replace_by[,1]+1) # check
     replace_by <- apply(replace_by, 1, paste, collapse=":")
-    if (grepl("oisst", prefix)) replace_by <- paste0(replace_by, "]") # because of special land sea mask
+    if (grepl("cmens", prefix)) replace_by <- paste0(replace_by, "]") # because of special land sea mask  #oisst
 }
 
 ###################################################################
