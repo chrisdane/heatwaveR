@@ -14,15 +14,15 @@ subset_from <- subset_to <- NULL
 
 # which variable
 depth <- NULL # default
-if (T) { # sst
+if (F) { # sst
     if (T) { # oisst
         dataname <- "oisst_v2.1"
         nchunks <- 82
         pathin <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/sst/", dataname, "/nchunks_", nchunks)
         #files <- list.files(pathin, glob2rx("oisst_v2.1_calc_mhw_sst_ts_19820101-20141231_clim_19820101-20141231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
-        #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
+        files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
         #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
-	files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
+	#files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_withTrend*.RData"))
         #files <- list.files(pathin, glob2rx("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20211231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData"))
     }
 
@@ -124,29 +124,29 @@ if (T) { # sst
         #subset_to <- as.POSIXct("2014-12-31 23:59:59", tz="UTC")
     }
 
-} else if (F) { # ce_tos_bgc22
+} else if (T) { # ce_tos_bgc06
     if (T) { # historical3_and_ssp585_2
         dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
         if (F) {
             nchunks <- 82
             depth <- "0m"
-            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
+            pathin <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
             files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
                                                        "_pctile_10_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_withTrend*.RData")))
         } else if (T) {
             nchunks <- 160
             depth <- "0m"
-            pathin <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_tos_bgc22/", dataname, "/nchunks_", nchunks)
-            #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
-            #                                           "_pctile_10_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_31a_withTrend*.RData")))
-            files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mcs_bgc22_", depth,
-                                                       "_pctile_10_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_runmean_15a_withTrend*.RData")))
+            pathin <- paste0("/work/ab1095/a270317/post/heatwaveR/calc/ce_tos_bgc06/", dataname, "/nchunks_", nchunks)
+            files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mhw_bgc06_", depth,
+                                                      "_pctile_90_ts_19820101-21001231_clim_19820101-20111231_minDuration_5_fixed_baseline_withTrend*.RData")))
+            #files <- list.files(pathin, glob2rx(paste0(dataname, "_calc_ce_mhw_tos_pctile_90_mhw_bgc06_", depth,
+            #                                         "_pctile_90_ts_19820101-21001231_clim_19820101-21001231_minDuration_5_runmean_15a_withTrend*.RData")))
         }
     }
 
 } # which var
 
-if (F) { # will be replaced by post_calc_heatwaveR_loop.r
+if (T) { # will be replaced by post_calc_heatwaveR_loop.r
     files <- files[1:2]
 }
 
@@ -174,8 +174,8 @@ calc_ts <- T # only makes sense with all calc result files, i.e. global; needs l
 #vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_cumulative")
 #vars_ts_wanted <- c("duration", "nevents", "intensity_mean", "intensity_var", "intensity_max", "intensity_max_relThresh")
 vars_ts_wanted <- c("duration", "nevents", "intensity_max")
-if (F) vars_ts_wanted <- "duration"
-if (T) vars_ts_wanted <- "nevents"
+if (T) vars_ts_wanted <- "duration"
+if (F) vars_ts_wanted <- "nevents"
 if (F) vars_ts_wanted <- "intensity_mean"
 if (F) vars_ts_wanted <- "intensity_var"
 if (F) vars_ts_wanted <- "intensity_max"
@@ -529,11 +529,11 @@ ts_to <- lapply(opts_global, "[[", "ts_to")
 ts_dt_yrs <- sapply(opts_global, "[[", "ts_dt_yrs")
 
 # todo: differnet dates bwtween variables not yet implemented
-if (!identical_list(clim_from)) { print(clim_from); stop("--> `clim_from` not identical for all variables") }
-if (!identical_list(clim_to)) { print(clim_to); stop("--> `clim_to` not identical for all variables") }
-if (!identical_list(ts_from)) { print(ts_from); stop("--> `ts_from` not identical for all variables") }
-if (!identical_list(ts_to)) { print(ts_to); stop("--> `ts_to` not identical for all variables") }
-if (length(unique(ts_dt_yrs)) != 1) stop("`ts_dt_yrs` differ: ", paste(ts_dt_yrs, collapse=", "))
+if (!identical_list(clim_from)) { print(clim_from); warning("--> `clim_from` not identical for all variables") }
+if (!identical_list(clim_to)) { print(clim_to); warning("--> `clim_to` not identical for all variables") }
+if (!identical_list(ts_from)) { print(ts_from); warning("--> `ts_from` not identical for all variables") }
+if (!identical_list(ts_to)) { print(ts_to); warning("--> `ts_to` not identical for all variables") }
+if (length(unique(ts_dt_yrs)) != 1) warning("`ts_dt_yrs` differ: ", paste(ts_dt_yrs, collapse=", "))
 clim_from <- clim_from[[1]]
 clim_to <- clim_to[[1]]
 ts_from <- ts_from[[1]]

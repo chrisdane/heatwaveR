@@ -19,8 +19,8 @@ if (F) { # oisst
     njobs_wanted <- 82
 } else if (T) { #cmens
     #prefix <- "cmens_runmean15"
-    prefix <- "cmens_pctile_90_fixed_baseline_woutTrend"
-    replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(172, 174))
+    prefix <- "cmens_pctile_90_fixed_baseline_withTrend"
+    replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(170, 172))
     #start <- 1; end <- 1036800 # ntot= nlon*nlat
     start <- 1; end <- 691150 # sea locations only
     #start <- 34558; end <- 69115
@@ -172,8 +172,8 @@ for (jobi in seq_len(njobs)) {
                  "#SBATCH --partition=shared     # Specify partition name",
                  #"#SBATCH --partition=prepost     # Specify partition name",
                  #"#SBATCH --ntasks=1             # Specify max. number of tasks to be invoked",
-                 "#SBATCH --time=04:00:00        # Set a limit on the total run time",
-                 #"#SBATCH --time=08:00:00        # Set a limit on the total run time",
+                 #"#SBATCH --time=04:00:00        # Set a limit on the total run time",
+                 "#SBATCH --time=08:00:00        # Set a limit on the total run time",
                  #"#SBATCH --time=14:00:00        # Set a limit on the total run time",
                  #"#SBATCH --mail-type=FAIL       # Notify user by email in case of job failure",
                  "#SBATCH --account=ab1095       # Charge resources on this project account",
