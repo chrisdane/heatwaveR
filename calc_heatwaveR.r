@@ -766,14 +766,14 @@ for (loci in seq_len(nloc)) {
                 timen <- as.numeric(time[okinds]) # time in seconds --> regression slope will have units per second
                 datap <- data[okinds]
                 lm <- stats::lm(datap ~ timen)
-                lm_summary <- summary(lm)
-                if (!is.na(lm$coefficients[2])) { # if lm was successfull
+                if (!is.na(lm$coefficients[2]) && lm$coefficients[2] != 0) { # if lm was successfull
                     #lm_n <- length(lm$fitted.values)
                     #lm_dt_sec <- lm$model[["timen"]][lm_n] - lm$model[["timen"]][1]
                     #lm_slope_pyr <- unname(lm$fitted.values[lm_n] - lm$fitted.values[1])/lm_dt_sec*365.25*86400
                     lm_slope_pyr <- unname(lm$coefficients[2])*365.25*86400 # slope in s-1
                     # --> both `lm_slope_pyr` are equal
                     attr(lm_slope_pyr, "units") <- varname_atts$units
+                    lm_summary <- summary(lm)
                     lm_label <- paste0("r=", round(sqrt(lm_summary$r.squared), 2), ", p")
                     lm_pval <- lm_summary$coefficients[2,4]
                     if (lm_pval < 1e-4) {
@@ -968,6 +968,10 @@ for (loci in seq_len(nloc)) {
             }
 
             # detect extreme events
+            # todo: clm$seas and clm$thresh could have many NA depending on the time series
+            #       --> how to deal with it
+            #       --> is there a general way to apply padding?
+
             # calls in `detect_event`:
             # 1) heatwaveR::detect_event():
             # t_series <- data.frame(ts_x, ts_y, ts_seas, ts_thresh)
@@ -1072,7 +1076,9 @@ elapsed_all <- elapsed_all[-1] # remove first elapsed value which is biased way 
 print(summary(elapsed_all))
 
 # save results to d isk
-if (cnt > 0) { # if at least one event was found
+if (cnt == 0) {
+    message("\nnot a single event was detected (e.g. all data was NA or) --> don't save any result file")
+} else if (cnt > 0) { # if at least one event was found
     opts_global <- list(dataname=dataname,
                         varname=varname, varname_atts=varname_atts, depth=depth,
                         clim_from=clim_from, clim_to=clim_to,
@@ -1090,7 +1096,7 @@ if (cnt > 0) { # if at least one event was found
     } else {
         base::save(events, opts, opts_global, file=fout)
     }
-} # if length(clms) > 0
+} # if cnt > 0
 
 message("\nfinished")
 
