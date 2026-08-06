@@ -60,12 +60,12 @@ library(heatwaveR, lib.loc="/home/a/a270073/scripts/r/packages/bin/r_4.1") # 0.4
 
 # default heatwaveR package options
 heatwaveR_opts <- list(minDuration=5,    # for heatwaveR::detect_event(); default: 5 days
-                       clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
+                       #clim_runmean=NA,  # for heatwaveR::tsclm(); default: NA; odd number of years for running mean
                        #clim_runmean=31,
-                       #clim_runmean=15,
+                       clim_runmean=15,
                        MCScorrect=F,     # for heatwaveR::detect_event(); default: F; passed to heatwaveR::category(): do not let seawater temp threshold go below -1.8°C
                        calc_trend=T,     # save trend of original data
-                       remove_trend=T,   # remove trend of original data before extreme event detection
+                       remove_trend=F,   # remove trend of original data before extreme event detection
                        climatology=F,    # for heatwaveR::detect_event(); default: F; passed to hewatwaveR::category(): returns more details
                        var=T,            # for heatwaveR::detect_event(); default: F; calc var in addition; if true, will run heatwaveR:::clim_calc and not clim_calc_cpp
                        roundClm=F        # for heatwaveR::ts2clm(); default: 4; round clim and thres values; !!! this actually depends on the variable; keep F !!!
@@ -622,6 +622,7 @@ rm(dt_day)
 # for running mean below
 time_posixlt <- as.POSIXlt(time)
 years_unique <- unique(time_posixlt$year+1900L)
+is.leap <- function (years) return(((years%%4 == 0) & (years%%100 != 0)) | (years%%400 == 0))
 
 # update initially provided ts_from, ts_to, clim_from, clim_to with actual time series time dim vals
 ts_from_ind <- which.min(abs(time - ts_from))
@@ -837,6 +838,7 @@ for (loci in seq_len(nloc)) {
                 message("`heatwaveR_opts$remove_trend` is true --> remove linear temporal trend from original time series ...")
                 if (F) { # remove all NA data -> changes length of time series
                          # --> time information does not match heatwaveR settings like `climatologyPeriod`
+                         # --> don't do it
                     time <- time[okinds]
                     data <- data[okinds] - lm_fit
                 } else if (T) { # keep NA data -> does not change length of time series
@@ -863,6 +865,10 @@ for (loci in seq_len(nloc)) {
             # $ doy : int  1 2 3 4 5 6 7 8 9 10 ...
             # $ ts_x: Date, format: "1982-01-01" "1982-01-02" ...
             # $ ts_y: num  -1.62 -1.63 -1.63 -1.63 -1.62 ...
+            # --> missing days are filled with NA, e.g. daily CMEMS data from 1998 to 2025
+            # --> input time series is 10216 days long
+            # --> output time series is 10227 = (1998:2025)*365 + 7 leap days long
+            # --> 11 missing days were filled
             # 3)    ts_wide <- clim_spread(ts_whole, clim_start, clim_end, windowHalfWidth)
             # ts_clim <- data.table::as.data.table(data)[ts_x %between% c(clim_start, clim_end)]
             # --> num [1:376, 1:119] -0.3379 -0.1992 -0.0399 0.2993 0.8453 ...
@@ -934,11 +940,19 @@ for (loci in seq_len(nloc)) {
             if (!is.na(heatwaveR_opts$clim_runmean)) { # calc clim/thresh wrt running mean
                 message("`heatwaveR_opts$clim_runmean` = ", heatwaveR_opts$clim_runmean,
                         " != NA --> run heatwaveR::ts2lim ", length(years_unique), " times for every year ...")
-                seas <- thresh <- rep(NA, times=ntime)
+                if (F) {
+                    # potentially shorter than nyears*ndays if there is missing data
+                    seas <- thresh <- rep(NA, times=ntime)
+                } else if (T) {
+                    # complete nyears*ndays as if there is no missing data
+                    # --> necessary due to step 2 `make_whole_fast` above
+                    ntime_gap_filled <- length(years_unique)*365 + length(which(is.leap(years_unique)))
+                    seas <- thresh <- rep(NA, times=ntime_gap_filled)
+                }
                 for (yi in seq_along(years_unique)) {
                     climatologyPeriod <- as.POSIXlt(c(paste0(max(years_unique[yi] - floor(heatwaveR_opts$clim_runmean/2), ts_from_posixlt$year+1900L), format(clim_from, "-%m-%d")),
                                                       paste0(min(years_unique[yi] + floor(heatwaveR_opts$clim_runmean/2), ts_to_posixlt$year+1900L), format(clim_to, "-%m-%d"))))
-                    message("--> year ", yi, "/", length(years_unique), ": ", years_unique[yi],
+                    message("year ", yi, "/", length(years_unique), ": ", years_unique[yi],
                             ": climatologyPeriod = ", paste(climatologyPeriod, collapse=" to "), " (", climatologyPeriod$year[2] - climatologyPeriod$year[1] + 1, " years)")
                     clm <- heatwaveR::ts2clm(data,
                                              climatologyPeriod=climatologyPeriod,
@@ -947,11 +961,9 @@ for (loci in seq_len(nloc)) {
                                              roundClm=heatwaveR_opts$roundClm
                                              )
 
-                    inds <- which(time_posixlt$year+1900L == years_unique[yi])
-                    if (length(inds) == 0) stop("this should not happen")
-                    if (length(inds) > 366) stop("this should not happen")
-                    seas[inds] <- clm$seas[seq_along(inds)] # first 365/366
-                    thresh[inds] <- clm$thresh[seq_along(inds)] # first 365/366
+                    inds <- which(format(clm$t, "%Y") == years_unique[yi]) # days of current year in potentially gap-filled clm
+                    seas[inds] <- clm$seas[seq_along(inds)] # daily climatology is repeated for every year -> contine with the running mean climatology of the current year
+                    thresh[inds] <- clm$thresh[seq_along(inds)] # same as seas
                 } # for yi
                 clm$seas <- seas
                 clm$thresh <- thresh
@@ -1064,7 +1076,7 @@ for (loci in seq_len(nloc)) {
             }
 
             if (nrow(event) == 1 && is.na(event$event_no)) { # not a single event was detected
-                # --> this can happen if there are many NA in the climatology and/or time series
+                # this can happen if there are many NA in the climatology and/or time series
                 message("--> not a single event was detected")
 
             } else { # at least one event was detected

@@ -89,7 +89,7 @@ if (F) { # sst
         }
     }
 
-} else if (T) { # bgc06 chl
+} else if (F) { # bgc06 chl
     if (T) { # historical3_and_ssp585_2
         dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
         if (T) {
@@ -122,7 +122,7 @@ if (F) { # sst
         #subset_to <- as.POSIXct("2014-12-31 23:59:59", tz="UTC")
     }
 
-} else if (F) { # ce_tos_bgc22
+} else if (T) { # ce_tos_bgc22
     if (T) { # historical3_and_ssp585_2
         dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
         if (F) {
