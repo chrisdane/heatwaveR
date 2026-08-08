@@ -8,18 +8,18 @@ dry <- F # do not submit jobs
 
 myrunscript_fname <- "~/scripts/r/heatwaveR/calc_heatwaveR.r"
 
-if (F) { # oisst
-    #prefix <- "oisst_runmean15"
-    prefix <- "oisst_fixed_baseline_withTrend"
+if (T) { # oisst
+    prefix <- "oisst_runmean_15a_withTrend"
+    #prefix <- "oisst_fixed_baseline_withTrend"
     replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(141, 143))
     #start <- 1; end <- 1036800 # ntot= nlon*nlat
     start <- 1; end <- 691150 # sea locations only
     #start <- 34558; end <- 69115
     #njobs_wanted <- 30
     njobs_wanted <- 82
-} else if (T) { #cmens
-    #prefix <- "cmens_runmean15"
-    prefix <- "cmens_pctile_90_fixed_baseline_withTrend"
+} else if (F) { #cmens
+    prefix <- "cmens_pctile_10_runmean_15a_withTrend"
+    #prefix <- "cmens_pctile_10_fixed_baseline_withTrend"
     replace_string <- list(string="    location_inds <- location_inds[", between_lines=c(170, 172))
     #start <- 1; end <- 1036800 # ntot= nlon*nlat
     start <- 1; end <- 691150 # sea locations only
@@ -69,7 +69,7 @@ if (!exists("replace_by")) {
     replace_by[,2] <- c(replace_by[2:njobs_wanted,2]-1, end)
     df <- cbind(from=replace_by[,1], to=replace_by[,2], len=replace_by[,2]-replace_by[,1]+1) # check
     replace_by <- apply(replace_by, 1, paste, collapse=":")
-    if (grepl("cmens", prefix)) replace_by <- paste0(replace_by, "]") # because of special land sea mask  #oisst
+    if (grepl("oisst", prefix)) replace_by <- paste0(replace_by, "]") # because of special land sea mask  #cmens
 }
 
 ###################################################################
@@ -173,8 +173,8 @@ for (jobi in seq_len(njobs)) {
                  #"#SBATCH --partition=prepost     # Specify partition name",
                  #"#SBATCH --ntasks=1             # Specify max. number of tasks to be invoked",
                  #"#SBATCH --time=04:00:00        # Set a limit on the total run time",
-                 "#SBATCH --time=08:00:00        # Set a limit on the total run time",
-                 #"#SBATCH --time=14:00:00        # Set a limit on the total run time",
+                 #"#SBATCH --time=08:00:00        # Set a limit on the total run time",
+                 "#SBATCH --time=14:00:00        # Set a limit on the total run time",
                  #"#SBATCH --mail-type=FAIL       # Notify user by email in case of job failure",
                  "#SBATCH --account=ab1095       # Charge resources on this project account",
                  #"#SBATCH --account=ab0246       # Charge resources on this project account",
