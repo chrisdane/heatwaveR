@@ -1090,7 +1090,7 @@ if (!calc_ts) {
                         # ccx: column-compound extreme event
                         # eq 3: n_r(year) = n_1(year)/d_y(year) * n_2(year)/d_y(year) * d_y(year)
                         # with: n_{1,2}: number of days per year of different csx (single)
-                        #       d_y: 365 the number of days per year
+                        #       d_y: {365,366} number of days per year
                         # eq 4: if n_r(year) == 0:       cp(year) = 0
                         #       if n(year) >= n_r(year): cp(year) = (n(year) - n_r(year)) / (n_max(year) - n_r(year))
                         #       if n(year)  < n_r(year): cp(year) = (n(year) - n_r(year)) / n_r(year)

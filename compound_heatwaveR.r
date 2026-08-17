@@ -2,9 +2,7 @@
 
 # find union of multi-variable extreme events in time (= compound events)
 # based on results of calc_heatwaveR.r
-# 1) load global calc data to check if global spatial info agrees for all variables
-# 2) apply potential location_inds subset
-# 3) identify compound events
+# --> calc must run on same spatial grid for all variables
 
 rm(list=ls())
 if (!interactive()) {
@@ -15,9 +13,9 @@ library(data.table) # quicker adding to df of unknown length (number of compound
 library(tibble) # to mimic heatwaveR::detect_event()
 
 verbose <- F
-#options(warn=2)
+options(warn=2)
 
-if (T) { # mhw + lox compounds; ce_tos_bgc2
+if (F) { # mhw + lox compounds
     if (T) { # awi-esm-1-1-lr_kh800
         varnames <- c("tos", "bgc22")
         if (T) { # historical3_and_ssp585_2
@@ -90,17 +88,46 @@ if (T) { # mhw + lox compounds; ce_tos_bgc2
             } # which heatwaveR setting
         } # which period/experiments
     } # which data
+
+} else if (T) { # mhw + chl compounds
+    if (T) { # oisst + cmems
+        varnames <- c("sst", "CHL")
+        dataname <- "oisst_cmems"
+        if (T) { # surface; fixed baseline wout trend
+            depths <- c(NA, NA)
+            nchunks <- c(82, 82)
+            files <- list(list.files(path=paste0("/work/ab1095/a270317/post/heatwaveR/calc/sst/oisst_v2.1/nchunks_", nchunks[1]),
+                                     pattern=glob2rx(paste0("mhw_calc_sst_ts_19820101-20211231_clim_19820101-20120101_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")),
+                                     full.names=T),
+                          list.files(path=paste0("/work/ab1095/a270317/post/heatwaveR/calc/CHL/cmens/nchunks_", nchunks[2]),
+                                     pattern=glob2rx(paste0("calc_CHLmhw_ts_19980101-20251231_clim_19980101-20251231_pctile_90_minDuration_5_fixed_baseline_woutTrend*.RData")),
+                                     full.names=T))
+            setting_label <- paste0(dataname, "_calc_ce",
+                                    "_mhw_", varnames[1], ifelse(!is.na(depths[1]), paste0("_", depths[1]), ""), "_pctile_90",
+                                    "_mhw_", varnames[2], ifelse(!is.na(depths[2]), paste0("_", depths[2]), ""), "_pctile_90",
+                                    "_ts_19820101-20251231_clim_19820101-20251231_minDuration_5_fixed_baseline_woutTrend")
+        } # which heatwaveR setting
+    } else if (T) { # awi-esm-1-1-lr_kh800
+        varnames <- c("tos", "bgc06") # todo: bgc15, chl
+        if (T) { # historical3_and_ssp585_2
+            dataname <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2"
+            stop("implement")
+        }
+    } # which data
+
 } # which variables for compound
 
 #nchunks_out <- max(nchunks) # old; better use more chunks = smaller files
 #pathout <- paste0("/work/ba1103/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160") # same nchunks as njobs_wanted in compound_heatwaveR_loop
-pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160")
+pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_82")
+#pathout <- paste0("/work/ab1095/a270073/post/heatwaveR/calc/ce_", paste(varnames, collapse="_"), "/", dataname, "/nchunks_160")
 
 if (F) { # old: does not take into account different nchunks per variable
     files <- lapply(files, "[", 28) # will be replaced by compound_heatwaveR_loop.r
 }
 if (T) { # new: apply location_inds later to take different chunks per variable into account
-    location_inds <- 7:20 # will be replaced by compound_heatwaveR_loop.r
+    #location_inds <- 7:20 # will be replaced by compound_heatwaveR_loop.r
+    location_inds <- 632150:640578
 }
 
 # runtime
@@ -309,7 +336,7 @@ if (!identical_list(spatialdim_opts)) {
         stop("not all variables have same spatial infos")
     }
 }
-message("--> all look the same --> ok")
+message("--> all identical --> ok")
 
 # reorder so that every entry is one location
 # --> bring possibly differently chunked (`nchunks`) variables onto same spatial dims
@@ -351,43 +378,50 @@ for (vi in seq_along(varnames)) {
         stop("implement")
     }
 } # for vi
+rm(events, opts)
+if (exists("lms")) rm(lms)
 # events_all[[1]][[1]] --> var/loc: (nevents x 28)
+# --> oisst cmems, 1982-2025: 25.8G
 
 # get number of locations per variable
-# --> should be ntot for all vars since all data was loaded
 nlocs <- sapply(events_all, length)
 nloc <- unique(nlocs)
-if (length(nloc) != 1) {
-    stop("`nlocs` = ", paste(nlocs, collapse=", "),
-         ", i.e. the number of locations differ between variables --> maybe you've loaded data from different depths/locations?")
+if (length(nloc) != 1) { # different number of locations per variable
+    message("`nlocs` = ", paste(paste0(names(nlocs), ": ", nlocs), collapse=", "),
+            ", i.e. the number of locations differ between variables\n",
+            "--> possible due to gappy data\n",
+            "--> if not, make sure you've loaded data from same data/time/location/depth/etc.")
 }
-ntot <- nloc
-for (vi in seq_along(varnames)) {
-    if (spatialdim_opts[[vi]]$ntot != ntot) {
-        stop("`spatialdim_opts[[vi]]$ntot` = ", spatialdim_opts[[vi]]$ntot, " != ntot = ", ntot, ". this should not happen")
-    }
-}
+ntot <- max(nloc) # continue with maximum number of locations in case there are different number of locations per variable
 
 message("\ncheck for location subset ...")
-if (!is.null(location_inds)) { # new location subset
+locis_all <- vector("list", length=length(varnames))
+names(locis_all) <- varnames
+for (vi in seq_along(locis_all)) {
+    locis_all[[vi]] <- sapply(opts_all[[vi]], "[[", "loci")
+}
+message("--> `loci` of all vars:")
+cat(capture.output(str(locis_all)), sep="\n")
+# $ sst: int [1:691150] 66904 66905 66906 66907 66908 66909 66910 66911 66912 66913 ...
+# $ CHL: int [1:640576] 66972 66973 66974 66975 66976 66977 66978 66979 66980 66981 ...
+
+# for location loop select locis of variable with most locations
+varind_with_max_locs <- which.max(nloc)
+locis <- locis_all[[varind_with_max_locs]]
+
+if (!is.null(location_inds)) { # location subset given
     message("--> `location_inds` = ", min(location_inds), ":", max(location_inds),
             "\n--> subset ", length(location_inds), " locations ...")
-    for (vi in seq_along(varnames)) {
-        events_all[[vi]] <- events_all[[vi]][location_inds]
-        opts_all[[vi]] <- opts_all[[vi]][location_inds]
-        if (exists("lms")) lms_all[[vi]] <- lms[[vi]][location_inds]
-    }
-    nloc <- length(location_inds) # update
-} else { # `location_inds` not given --> use all locations
-    nloc <- ntot
-    message("--> `location_inds` is NULL --> use all ", nloc, " locations ...")
-    location_inds <- seq_len(nloc) # all: 1,...,n
+    locis <- locis[location_inds]
 } # if !is.null(location_inds)
+nloc <- length(locis)
+message("--> `locis` to be used for loci loop:")
+cat(capture.output(str(locis)), sep="\n")
 
 # construct fout
 fout <- paste0(setting_label, "_locinds_",
-               sprintf(paste0("%0", nchar(ntot), "i"), location_inds[1]), "-",
-               sprintf(paste0("%0", nchar(ntot), "i"), location_inds[nloc]),
+               sprintf(paste0("%0", nchar(ntot), "i"), locis[1]), "-",
+               sprintf(paste0("%0", nchar(ntot), "i"), locis[nloc]),
                "_nloc_", nloc,
                ".RData")
 fout <- paste0(pathout, "/", fout)
@@ -397,11 +431,11 @@ if (file.exists(fout)) stop("this file already exists")
 # find compound events at every location
 message("\nfind compound events of ", length(varnames), " variables ",
         paste(varnames, collapse=", "), " at ", nloc, " locations ...")
-nevents_loci <- rep(NA, times=length(varnames))
+locinds_loci <- nevents_loci <- rep(NA, times=length(varnames))
 events_ce <- vector("list", length=nloc)
 tic <- Sys.time()
 for (loci in seq_len(nloc)) {
-#for (loci in 100) { # test
+#for (loci in 162) { # test
 
     if (loci == 1 || loci == nloc || loci %% 1e2 == 0) {
         message("loci ", loci, "/", nloc, " = ", round(loci/nloc*100), "%")
@@ -411,143 +445,163 @@ for (loci in seq_len(nloc)) {
     # --> data.table better than data.frame?
     # --> tibble better than data.table?
     # --> other alternatives?
-    events_ce_dt <- data.frame(date_start=numeric(), date_end=numeric(), duration=numeric())
+    events_ce_dt <- data.frame(date_start=numeric(), date_end=numeric(), duration_ce=numeric())
+    for (vi in seq_along(varnames)) { # save durations of single events for co-occurence propensity calculation
+        events_ce_dt <- cbind(events_ce_dt, numeric())
+    }
+    names(events_ce_dt)[4:ncol(events_ce_dt)] <- paste0("duration_", varnames)
     events_ce_dt <- data.table::as.data.table(events_ce_dt)
     cnt_ce <- 0
 
-    # loop through smallest number of events per variable
-    #if (opts[[loci]]$loci == 41870) stop("asd") # --> loci = 100
+    # get location inds of all variables
     for (vi in seq_along(varnames)) {
-        nevents_loci[vi] <- nrow(events_all[[vi]][[loci]])
-        if (nevents_loci[vi] == 1) {
-            if (all(is.na(events_all[[vi]][[loci]]))) stop("need to check if thats correct")
-            nevents_loci[vi] <- 0 # heatwaveR detected zero events at that location
+        locinds_loci[vi] <- match(locis[loci], locis_all[[vi]]) # returns NA if none found
+    }
+    if (anyNA(locinds_loci)) { # some variable has not data at current location loci -> skip to next location loci
+        if (T) {
+            message("not all variables have data at loci ", loci, ":")
+            cat(capture.output(str(opts_all[[varind_with_max_locs]][[locinds_loci[varind_with_max_locs]]])), sep="\n")
         }
-    } # for vi
-    if (any(nevents_loci) == 0) { # for some variable zero events were found at that location --> skip to next location
-
-        # mimic heatwaveR::detect_event()
-        events_ce[[loci]] <- tibble::as_tibble(data.frame(date_start=NA, date_end=NA, duration=NA))
-        # --> looks like:
+        events_ce[[loci]] <- tibble::as_tibble(data.frame(date_start=NA, date_end=NA, duration=NA)) # mimic heatwaveR::detect_event()
         # $ : tibble [0 × 3] (S3: tbl_df/tbl/data.frame)
-        #  ..- attr(*, ".internal.selfref")=<externalptr>
 
-    } else { # some events were found for each variable at current loci
-
-        # to save time, loop through all events of that variable with the smallest number of events at current loci
-        varind <- which.min(nevents_loci)
-        other_varinds <- seq_along(varnames)[-varind]
-        for (eventi in seq_len(nevents_loci[varind])) {
-
-            days <- vector("list", length=length(varnames))
-            names(days) <- varnames
-            date_start_eventi <- events_all[[varind]][[loci]]$date_start[eventi]
-            date_end_eventi <- events_all[[varind]][[loci]]$date_end[eventi]
-            days[[varind]] <- list(base::seq.Date(date_start_eventi, date_end_eventi, by="1 day")) # list per event --> here for variable varind always just one
-            if (verbose) {
-                message("****************************************************************\n",
-                        "loci ", loci, " eventi ", eventi, " from ", date_start_eventi, " to ", date_end_eventi)
+    } else {
+        for (vi in seq_along(varnames)) {
+            nevents_loci[vi] <- nrow(events_all[[vi]][[locinds_loci[vi]]])
+            if (nevents_loci[vi] == 1) {
+                if (all(is.na(events_all[[vi]][[locinds_loci[vi]]]))) stop("need to check if thats correct")
+                nevents_loci[vi] <- 0 # zero vari events at that location
             }
+        } # for vi
+        if (any(nevents_loci == 0)) { # there are zero events for some variable at current location loci --> skip to next location loci
 
-            # loop through all events of all other variables and check if there is any temporal overlap with current event
-            for (vj in seq_along(other_varinds)) {
-                tmp <- list() # list per event --> here for variable vj possibly more than one
-                cnt <- 0
-                for (eventj in seq_len(nevents_loci[other_varinds[vj]])) { # test: loci = 100; eventi = 8; eventj = 20
-                    date_start_eventj <- events_all[[other_varinds[vj]]][[loci]]$date_start[eventj]
-                    date_end_eventj <- events_all[[other_varinds[vj]]][[loci]]$date_end[eventj]
-                    if (any(!is.na(match(c(date_start_eventj, date_end_eventj), days[[varind]][[1]])))) {
-                        # eventj of variable vj has _any_ overlap with eventi of variable varind
-                        # --> for CEs, there is usually no minimum day constraint as for individual extreme events (e.g. 5 days for MHWs, LOXs, ...)
-                        cnt <- cnt + 1
-                        tmp[[cnt]] <- base::seq.Date(date_start_eventj, date_end_eventj, by="1 day")
-                    } # if eventj has any days within eventi
-                } # for eventj
-                days[[other_varinds[vj]]] <- tmp
-            } # for vj
+            events_ce[[loci]] <- tibble::as_tibble(data.frame(date_start=NA, date_end=NA, duration=NA)) # mimic heatwaveR::detect_event()
+            # $ : tibble [0 × 3] (S3: tbl_df/tbl/data.frame)
 
-            if (F) { # add vars and events for test
-                days[[other_varinds[vj]]][[length(days[[other_varinds[vj]]])+1]] <- seq.Date(days[[other_varinds[vj]]][[1]][11], days[[2]][[1]][14], by="1 day")
-                days[[length(days)+1]] <- list()
-                names(days)[length(days)] <- paste0("var", length(days))
-                days[[length(days)]][[1]] <- seq.Date(days[[1]][[1]][1], days[[1]][[1]][5], by="1 day")
-                days[[length(days)]][[2]] <- seq.Date(days[[1]][[1]][2], days[[1]][[1]][6], by="1 day")
-            }
+        } else { # some events were found for each variable at current loci
 
-            # get common days of current eventi of vari and all other events of all other vars
-            nevents_to_compare <- sapply(days, length)
-            if (any(nevents_to_compare == 0)) { # no common days were found for all other variables for current eventi of vari
+            # to save time, loop through all events of the variable with the smallest number of events at current loci
+            varind <- which.min(nevents_loci)
+            other_varinds <- seq_along(varnames)[-varind]
+            for (eventi in seq_len(nevents_loci[varind])) {
+
+                days <- vector("list", length=length(varnames))
+                names(days) <- varnames
+                date_start_eventi <- events_all[[varind]][[locinds_loci[varind]]]$date_start[eventi]
+                date_end_eventi <- events_all[[varind]][[locinds_loci[varind]]]$date_end[eventi]
+                days[[varind]] <- list(base::seq.Date(date_start_eventi, date_end_eventi, by="1 day")) # list per event --> here for variable varind always just one
                 if (verbose) {
-                    message("no overlap with any of other variables events:")
-                    for (vj in seq_along(other_varinds)) {
-                        message("vj ", vj, ":")
-                        print(paste0(events_all[[other_varinds[vj]]][[loci]]$date_start, " to ", events_all[[other_varinds[vj]]][[loci]]$date_end), width=500) # all events of var vj
+                    message("****************************************************************\n",
+                            "loci ", loci, ", varind ", varind, " ", varnames[varind], ", eventi ", eventi, " from ", date_start_eventi, " to ", date_end_eventi)
+                }
+
+                # loop through all events of all other variables and check if there is any temporal overlap with current event
+                for (vj in seq_along(other_varinds)) {
+                    tmp <- list() # list per event --> here for variable vj possibly more than one
+                    cnt <- 0
+                    for (eventj in seq_len(nevents_loci[other_varinds[vj]])) { # test: loci = 100; eventi = 8; eventj = 20
+                        date_start_eventj <- events_all[[other_varinds[vj]]][[locinds_loci[other_varinds[vj]]]]$date_start[eventj]
+                        date_end_eventj <- events_all[[other_varinds[vj]]][[locinds_loci[other_varinds[vj]]]]$date_end[eventj]
+                        if (any(!is.na(match(c(date_start_eventj, date_end_eventj), days[[varind]][[1]])))) {
+                            # eventj of variable vj has _any_ overlap with eventi of variable varind
+                            # --> for CEs, there is usually no minimum day constraint as for individual extreme events (e.g. 5 days for MHWs, LOXs, ...)
+                            cnt <- cnt + 1
+                            tmp[[cnt]] <- base::seq.Date(date_start_eventj, date_end_eventj, by="1 day")
+                        } # if eventj has any days within eventi
+                    } # for eventj
+                    days[[other_varinds[vj]]] <- tmp
+                } # for vj
+
+                if (F) { # add vars and events for test
+                    days[[other_varinds[vj]]][[length(days[[other_varinds[vj]]])+1]] <- seq.Date(days[[other_varinds[vj]]][[1]][11], days[[2]][[1]][14], by="1 day")
+                    days[[length(days)+1]] <- list()
+                    names(days)[length(days)] <- paste0("var", length(days))
+                    days[[length(days)]][[1]] <- seq.Date(days[[1]][[1]][1], days[[1]][[1]][5], by="1 day")
+                    days[[length(days)]][[2]] <- seq.Date(days[[1]][[1]][2], days[[1]][[1]][6], by="1 day")
+                }
+
+                # get common days of current eventi of vari and all other events of all other vars
+                nevents_to_compare <- sapply(days, length)
+                if (any(nevents_to_compare == 0)) { # no common days were found for all other variables for current eventi of vari
+                    if (verbose) {
+                        message("no overlap with any of other variables events:")
+                        for (vj in seq_along(other_varinds)) {
+                            message("vj ", vj, ":")
+                            print(paste0(events_all[[other_varinds[vj]]][[locinds_loci[other_varinds[vj]]]]$date_start, " to ",
+                                         events_all[[other_varinds[vj]]][[locinds_loci[other_varinds[vj]]]]$date_end), width=500) # all events of var vj
+                        }
                     }
-                }
-                # skip to next eventi of vari
-            } else { # common days were found for all variables for current eventi of vari
+                    # skip to next eventi of vari
+                } else { # common days were found for all variables for current eventi of vari
 
-                # restructure from e.g.
-                #   list(var1=list(event1, event2), var2=list(event1, event2, event3), var3=list(event1)) # one of varX is always of length 1
-                # to
-                #   list(event1=list(var1, var2, var3), event2=list(var1, var2, var3), event3=list(var1, var2, var3),
-                #        event4=list(var1, var2, var3), event5=list(var1, var2, var3), event6=list(var1, var2, var3))
-                # --> maximum 2 x 3 = 6 possible CE combinations
-                days_ce <- vector("list", length=prod(nevents_to_compare[-varind]))
-                if (verbose) {
-                    message("loci ", loci, "/", nloc, " variable ", varind, " ", varnames[varind],
-                            " eventi ", eventi, "/", nrow(events_all[[varind]][[loci]]), ": append ",
-                            length(days_ce), " compound events")
-                }
-                inds <- expand.grid(lapply(nevents_to_compare[-varind], seq_len)) # (n_event_combinations,n_vars)
-                # e.g.:
-                #   var1 var2 var3
-                # 1    1    1    1
-                # 2    2    1    1
-                # 3    1    2    1
-                # 4    2    2    1
-                # 5    1    3    1
-                # 6    2    3    1
-                if (nrow(inds) != length(days_ce)) stop("this should not happen")
-                if (ncol(inds) != length(other_varinds)) stop("this should not happen")
-                for (cei in seq_along(days_ce)) {
-                    tmp <- list(days[[varind]][[1]]) # always just one event of variable with least number of events at loci
-                    for (vj in seq_along(other_varinds)) {
-                        tmp[[length(tmp)+1]] <- days[[other_varinds[vj]]][[inds[cei,vj]]]
+                    # restructure from e.g.
+                    #   list(var1=list(event1, event2), var2=list(event1, event2, event3), var3=list(event1)) # one of varX is always of length 1
+                    # to
+                    #   list(event1=list(var1, var2, var3), event2=list(var1, var2, var3), event3=list(var1, var2, var3),
+                    #        event4=list(var1, var2, var3), event5=list(var1, var2, var3), event6=list(var1, var2, var3))
+                    # --> maximum 2 x 3 = 6 possible CE combinations
+                    days_ce <- vector("list", length=prod(nevents_to_compare[-varind]))
+                    if (verbose) {
+                        message("loci ", loci, "/", nloc, " variable ", varind, " ", varnames[varind],
+                                " eventi ", eventi, "/", nrow(events_all[[varind]][[loci]]), ": append ",
+                                length(days_ce), " compound events")
                     }
-                    days_ce[[cei]] <- tmp
-                }
-                days_ce <- lapply(days_ce, function(x) base::Reduce(base::intersect, x))
-                inds <- which(sapply(days_ce, length) > 0)
-                if (length(inds) == 0) stop("this should not happen")
-                days_ce <- days_ce[inds]
+                    inds <- expand.grid(lapply(nevents_to_compare[-varind], seq_len)) # (n_event_combinations,n_vars)
+                    # e.g.:
+                    #   var1 var2 var3
+                    # 1    1    1    1
+                    # 2    2    1    1
+                    # 3    1    2    1
+                    # 4    2    2    1
+                    # 5    1    3    1
+                    # 6    2    3    1
+                    if (nrow(inds) != length(days_ce)) stop("this should not happen")
+                    if (ncol(inds) != length(other_varinds)) stop("this should not happen")
+                    for (cei in seq_along(days_ce)) {
+                        tmp <- list(days[[varind]][[1]]) # always just one event of variable with least number of events at loci
+                        for (vj in seq_along(other_varinds)) {
+                            tmp[[length(tmp)+1]] <- days[[other_varinds[vj]]][[inds[cei,vj]]]
+                        }
+                        days_ce[[cei]] <- tmp
+                    }
+                    days_ce <- lapply(days_ce, function(x) base::Reduce(base::intersect, x))
+                    inds <- which(sapply(days_ce, length) > 0)
+                    if (length(inds) == 0) stop("this should not happen")
+                    days_ce <- days_ce[inds]
 
-                # save start and end dates and duration of all compound events at current location loci
-                dates_start <- as.Date(sapply(lapply(days_ce, range), "[[", 1), origin="1970-1-1")
-                dates_end <- as.Date(sapply(lapply(days_ce, range), "[[", 2), origin="1970-1-1")
-                durations <- sapply(days_ce, length)
-                #inds <- order(dates_start)
+                    # save start and end dates and duration of all compound events at current location loci
+                    dates_start <- as.Date(sapply(lapply(days_ce, range), "[[", 1), origin="1970-1-1")
+                    dates_end <- as.Date(sapply(lapply(days_ce, range), "[[", 2), origin="1970-1-1")
+                    durations_ce <- sapply(days_ce, length)
+                    #inds <- order(dates_start)
 
-                # todo: return days of individual extreme events for co-coocurence propensity calculation
+                    # save days of single extreme events for co-coocurence propensity calculation
+                    if (length(days_ce) > 0) stop("implement durations_se for this case")
+                    durations_se <- rep(NA, times=length(varnames))
+                    names(durations_se) <- paste0("duration_", varnames)
+                    for (vi in seq_along(durations_se)) {
+                        durations_se[vi] <- sapply(days[[vi]], length)
+                    } # for vi
 
-                cnt_ce <- cnt_ce + 1
-                rows <- data.frame(date_start=dates_start, date_end=dates_end, duration=durations)
-                #if (cnt_ce == 2) stop("asd")
-                if (cnt_ce == 1) {
-                    events_ce_dt <- data.table::as.data.table(rows)
-                } else {
-                    events_ce_dt <- data.table::rbindlist(list(events_ce_dt, rows))
-                }
+                    cnt_ce <- cnt_ce + 1
+                    rows <- data.frame(date_start=dates_start, date_end=dates_end, duration_ce=durations_ce)
+                    rows <- cbind(rows, base::t(durations_se))
+                    #if (cnt_ce == 2) stop("asd")
+                    if (cnt_ce == 1) {
+                        events_ce_dt <- data.table::as.data.table(rows)
+                    } else {
+                        events_ce_dt <- data.table::rbindlist(list(events_ce_dt, rows))
+                    }
 
-            } # if there are common days for all variables or not
+                } # if there are common days for all variables or not
 
-        } # for eventi
+            } # for eventi
 
-        # save results for current location
-        events_ce[[loci]] <- tibble::as_tibble(events_ce_dt) # mimic heatwaveR::detect_event()
+            # save results for current location
+            events_ce[[loci]] <- tibble::as_tibble(events_ce_dt) # mimic heatwaveR::detect_event()
 
-    } # if some events were found for each variable at current loci
-
+        } # if some events were found for each variable at current loci
+    } # if there is data for each variable at current loci
     #stop("asd")
 
 } # for loci
@@ -590,8 +644,8 @@ if (F) { # old
 } else if (T) { # new
     message("\nsave ce results from ", nloc, " locations to\n   ", fout, " ...")
     events <- events_ce
-    opts <- opts_all[[1]] # same location opts for all vars; was already checked earlier
-    base::save(events, opts, opts_global, file=fout) # must be same names as in calc_heatwaveR.r
+    opts <- opts_all
+    base::save(events, opts, opts_global, file=fout) # must be same datanames as in calc_heatwaveR.r (events, opts, opts_global)
 
 } # old/new
 

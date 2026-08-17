@@ -8,7 +8,6 @@ dry <- F # do not submit jobs
 
 myrunscript_fname <- "~/scripts/r/heatwaveR/compound_heatwaveR.r"
 
-<<<<<<< Updated upstream
 if (T) { # fesom
     prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_with"
     #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_wout"
@@ -26,21 +25,14 @@ if (T) { # fesom
         njobs_wanted <- 160 # can be same as `njobs_wanted` from calc_heatwaveR_loop but not necessary
         replace_string <- list(string="    location_inds <- ", between_lines=c(103, 105))
     }
-} # which data
-=======
-if (T) {
-    start <- 1; end <- 82 # nchunks of calc_heatwaveR.r
-    #start <- 1; end <- 160
-    prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc06_0m_fixed_withTrend_clim_to_2011"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_fixed_wout"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_31yr_with"
-    #prefix <- "awi-esm-1-1-lr_kh800_historical3_and_ssp585_2_tos_bgc_0_15yr_with"
-    replace_string <- list(string="    files <- lapply(files, \"[\", ", between_lines=c(86, 88))
-    #njobs_wanted <- 10
-    njobs_wanted <- 40      #WE CAN PUT TO THE END ????
-    #njobs_wanted <- end
-}
->>>>>>> Stashed changes
+
+} else if (T) { # oisst cmems
+    prefix <- "sst_CHL_fixed_woutTrend_pctile_90_90"
+    start <- 1; end <- 691150 # sst: 691150, CHL: 640576 --> take max
+    njobs_wanted <- 82 # can be same as `njobs_wanted` from calc_heatwaveR_loop but not necessary
+    replace_string <- list(string="    location_inds <- ", between_lines=c(102, 104))
+
+}  # which data
 
 if (!exists("replace_by")) {
     ntot <- end - start + 1

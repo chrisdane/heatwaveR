@@ -1114,7 +1114,7 @@ print(summary(elapsed_all))
 
 # save results to d isk
 if (cnt == 0) {
-    message("\nnot a single event was detected (e.g. all data was NA or) --> don't save any result file")
+    message("\nnot a single event was detected (e.g. all data was NA) --> don't save any result file")
 } else if (cnt > 0) { # if at least one event was found
     opts_global <- list(dataname=dataname,
                         varname=varname, varname_atts=varname_atts, depth=depth,
